@@ -273,7 +273,7 @@ Vector3D rotateAroundAxis(
     const Vector3D& axis,
     double angleDeg)
 {
-    double a = angleDeg * M_PI / 180.0;
+    double a = angleDeg * 3.14159265 / 180.0;
     Vector3D k = axis.normalized();
 
     return v * cos(a)
@@ -1057,25 +1057,38 @@ void Wireframe::clear()
     zBuffer.assign(w * h, std::numeric_limits<double>::infinity());
 }
 
-void Wireframe::fillTriangle(int x0, int y0, double z0, 
-                             int x1, int y1, double z1,
-                             int x2, int y2, double z2,
-                             const Material& mat)
+void Wireframe::fillTriangle(
+    int x0, int y0, double z0,
+    int x1, int y1, double z1,
+    int x2, int y2, double z2,
+    const Material& mat)
 {
+    // =========================================================
+    // Bounding box
+    // =========================================================
     int minX = std::max(0, std::min({x0, x1, x2}));
-    int maxX = std::min(w-1, std::max({x0, x1, x2}));
+    int maxX = std::min(w - 1, std::max({x0, x1, x2}));
     int minY = std::max(0, std::min({y0, y1, y2}));
-    int maxY = std::min(h-1, std::max({y0, y1, y2}));
+    int maxY = std::min(h - 1, std::max({y0, y1, y2}));
 
-    auto edge = [](double x0, double y0, double x1, double y1, double x, double y)
+    auto edge = [](double ax, double ay,
+                   double bx, double by,
+                   double px, double py)
     {
-        return (x1 - x0)*(y - y0) - (y1 - y0)*(x - x0);
+        return (bx - ax) * (py - ay)
+             - (by - ay) * (px - ax);
     };
 
+    // =========================================================
+    // Triangle area
+    // =========================================================
     double area = edge(x0, y0, x1, y1, x2, y2);
-    if (area == 0) return;
 
-    if (area < 0)
+    if (area == 0.0)
+        return;
+
+    // CCW fix
+    if (area < 0.0)
     {
         std::swap(x1, x2);
         std::swap(y1, y2);
@@ -1083,34 +1096,97 @@ void Wireframe::fillTriangle(int x0, int y0, double z0,
         area = -area;
     }
 
+    double invArea = 1.0 / area;
+
+    // =========================================================
+    // Edge coefficients (incremental)
+    // =========================================================
+    const double A01 = y0 - y1;
+    const double A12 = y1 - y2;
+    const double A20 = y2 - y0;
+
+    const double B01 = x1 - x0;
+    const double B12 = x2 - x1;
+    const double B20 = x0 - x2;
+
+    // =========================================================
+    // Pixel start (center)
+    // =========================================================
+    double px = minX + 0.5;
+    double py = minY + 0.5;
+
+    // =========================================================
+    // Initial edge values
+    // =========================================================
+    double w0_row = edge(x1, y1, x2, y2, px, py);
+    double w1_row = edge(x2, y2, x0, y0, px, py);
+    double w2_row = edge(x0, y0, x1, y1, px, py);
+
+    // =========================================================
+    // Pointer optimization (IMPORTANT)
+    // =========================================================
+    Farbe* fb = frameBuffer.data();
+    double* zb = zBuffer.data();
+
+    int width = w;
+
+    // =========================================================
+    // Raster loop
+    // =========================================================
     for (int y = minY; y <= maxY; y++)
     {
+        double w0 = w0_row;
+        double w1 = w1_row;
+        double w2 = w2_row;
+
+        int idx = y * width + minX;
+
+        Farbe* fbRow = fb + idx;
+        double* zRow = zb + idx;
+
         for (int x = minX; x <= maxX; x++)
         {
-            double px = x + 0.5;
-            double py = y + 0.5;
-
-            double w0 = edge(x1,y1,x2,y2,px,py);
-            double w1 = edge(x2,y2,x0,y0,px,py);
-            double w2 = edge(x0,y0,x1,y1,px,py);
-
-            if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+            // =================================================
+            // Inside test (unchanged)
+            // =================================================
+            if (w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0)
             {
-                double alpha = w0 / area;
-                double beta  = w1 / area;
-                double gamma = w2 / area;
+                double alpha = w0 * invArea;
+                double beta  = w1 * invArea;
+                double gamma = w2 * invArea;
 
-                double z = alpha * z0 + beta * z1 + gamma * z2;
+                double z =
+                    alpha * z0 +
+                    beta  * z1 +
+                    gamma * z2;
 
-                int idx = y * w + x;
-
-                if (z < zBuffer[idx])
+                // =================================================
+                // Branch optimized Z-test (safe version)
+                // =================================================
+                if (z < *zRow)
                 {
-                    zBuffer[idx] = z;
-                    frameBuffer[idx] = mat.diffuse;
+                    *zRow = z;
+                    *fbRow = mat.diffuse;
                 }
             }
+
+            // =================================================
+            // Incremental edge stepping
+            // =================================================
+            w0 += A12;
+            w1 += A20;
+            w2 += A01;
+
+            fbRow++;
+            zRow++;
         }
+
+        // =====================================================
+        // next row
+        // =====================================================
+        w0_row += B12;
+        w1_row += B20;
+        w2_row += B01;
     }
 }
 
