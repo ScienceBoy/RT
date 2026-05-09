@@ -1,0 +1,36 @@
+<scene>
+
+    <camera>
+        <position x="12.5" y="9.42442" z="-15.5388"/>
+        <target x="12.5" y="0.113987" z="12.5"/>
+        <fov>29.9833</fov>
+        <aspect>1.77778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="400" y="50" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+        <light>
+            <position x="200" y="500" z="300"/>
+            <color r="0.8" g="0.8" b="0.8"/>
+        </light>
+
+        <light>
+            <position x="50" y="50" z="-50"/>
+            <color r="1" g="1" b="0.2"/>
+        </light>
+
+    </lights>
+
+    <materials>
+
+    </materials>
+
+    <objects>
+
+    </objects>
+
+</scene>

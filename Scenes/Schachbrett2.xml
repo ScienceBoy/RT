@@ -1,0 +1,43 @@
+<scene>
+
+    <camera>
+        <position x="-2.89875" y="4.00891" z="-0.321248"/>
+        <target x="0" y="1.575" z="-0.217"/>
+        <fov>88</fov>
+        <aspect>1.77778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="40" y="50" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+    </lights>
+
+    <materials>
+
+        <material id="bluePlastic"/>
+        <material id="glass"/>
+        <material id="mirror"/>
+        <material id="gold"/>
+        <material id="cyanWall"/>
+        <material id="greenWall"/>
+        <material id="yellowCeil"/>
+        <material id="greenGlass"/>
+        <material id="redWall"/>
+        <material id="blueWall"/>
+    </materials>
+
+    <objects>
+        <wall material="bluePlastic"
+            texture="Schachbrett.bmp"
+            textureMode="PLANAR">
+            <p x="-600" y="0" z="-400"/>
+            <p x="600" y="0" z="-400"/>
+            <p x="600" y="0" z="400"/>
+            <p x="-600" y="0" z="400"/>
+        </wall>
+    </objects>
+
+</scene>

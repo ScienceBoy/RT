@@ -1,0 +1,138 @@
+<scene>
+    <!-- ================= CAMERA ================= -->
+    <camera>
+        <position x="400" y="300" z="-400"/>
+        <target x="400" y="300" z="1"/>
+        <fov>120</fov>
+        <aspect>1.7778</aspect>
+    </camera>
+
+    <!-- ================= LIGHTS ================= -->
+    <lights>
+        <light>
+            <position x="400" y="50" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+        <light>
+            <position x="200" y="500" z="300"/>
+            <color r="0.8" g="0.8" b="0.8"/>
+        </light>
+
+        <light>
+            <position x="50" y="50" z="-50"/>
+            <color r="1" g="1" b="0.2"/>
+        </light>
+    </lights>
+
+    <!-- ================= MATERIALS ================= -->
+    <materials>
+
+
+        <material id="blueWall" type="simple">
+            <color r="0.0" g="0.0" b="0.7"/>
+        </material>
+
+        <material id="yellowCeil" type="simple">
+            <color r="1" g="1" b="0"/>
+        </material>
+
+        <material id="redWall" type="simple">
+            <color r="1" g="0" b="0"/>
+        </material>
+
+        <material id="greenWall" type="simple">
+            <color r="0" g="1" b="0"/>
+        </material>
+
+        <material id="cyanWall" type="simple">
+            <color r="0" g="1" b="1"/>
+        </material>
+
+        <material id="mirror"/>
+        <material id="gold" type = "preset"/>
+        <material id="glass"/>
+        <material id="bluePlastic"/>
+        <material id="greenGlass"/>
+    </materials>
+
+    <!-- ================= OBJECTS ================= -->
+    <objects>
+
+        <!-- Wände -->
+        <wall material="blueWall">
+            <p x="0" y="600" z="0"/>
+            <p x="1200" y="600" z="0"/>
+            <p x="1200" y="600" z="800"/>
+            <p x="0" y="600" z="800"/>
+        </wall>-
+
+         <wall material="bluePlastic"
+            texture="Schachbrett.bmp"
+            textureMode="PLANAR">
+            <p x="0" y="0" z="0"/>
+            <p x="1200" y="0" z="0"/>
+            <p x="1200" y="0" z="800"/>
+            <p x="0" y="0" z="800"/>
+        </wall>
+
+        <wall material="redWall">
+            <p x="0" y="0" z="0"/>
+            <p x="0" y="600" z="0"/>
+            <p x="0" y="600" z="800"/>
+            <p x="0" y="0" z="800"/>
+        </wall>
+
+        <wall material="greenWall">
+            <p x="1200" y="0" z="0"/>
+            <p x="1200" y="600" z="0"/>
+            <p x="1200" y="600" z="800"/>
+            <p x="1200" y="0" z="800"/>
+        </wall>
+
+        <wall material="cyanWall">
+            <p x="0" y="0" z="800"/>
+            <p x="1200" y="0" z="800"/>
+            <p x="1200" y="600" z="800"/>
+            <p x="0" y="600" z="800"/>
+        </wall>
+
+        <!-- Kugeln -->
+        <SPHERE material="bluePlastic"
+                radius="80"
+                texture="8081_earthmap10k.bmp"
+                textureMode="SPHERE">
+            <position x="240" y="420" z="400"/>
+        </SPHERE>
+
+         <SPHERE material="gold" radius="150">
+            <position x="840" y="420" z="500"/>
+        </SPHERE>
+
+        <SPHERE material="glass" radius="90">
+            <position x="720" y="240" z="350"/>
+        </SPHERE>
+
+        <SPHERE material="bluePlastic" radius="70">
+            <position x="360" y="180" z="300"/>
+        </SPHERE>
+
+        <SPHERE material="greenGlass" radius="100">
+            <position x="600" y="360" z="450"/>
+        </SPHERE>
+
+        <!-- Stab -->
+        <cylinder material="bluePlastic" 
+                texture="Schachbrett.bmp"
+                textureMode="PLANAR"
+                radius="20">
+            <start x="200" y="100" z="100"/>
+            <end x="840" y="420" z="600"/>
+        </cylinder>
+
+        <!-- OBJ -->
+        <mesh material="bluePlastic" file="N:/RayTracing/FS26/SW08/Glas.obj"  texture="8081_earthmap10k.bmp" textureMode="SPHERE"/>
+
+    </objects>
+
+</scene>

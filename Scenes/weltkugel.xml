@@ -1,0 +1,52 @@
+<scene>
+
+    <camera>
+        <position x="350" y="420" z="400"/>
+        <target x="200" y="420" z="400"/>
+        <fov>90</fov>
+        <aspect>1.7778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="400" y="50" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+        <light>
+            <position x="200" y="500" z="300"/>
+            <color r="0.8" g="0.8" b="0.8"/>
+        </light>
+
+        <light>
+            <position x="50" y="50" z="-50"/>
+            <color r="1" g="1" b="0.2"/>
+        </light>
+
+    </lights>
+
+    <materials>
+
+        <material id="bluePlastic"/>
+        <material id="glass"/>
+        <material id="mirror"/>
+        <material id="gold"/>
+        <material id="cyanWall"/>
+        <material id="greenWall"/>
+        <material id="yellowCeil"/>
+        <material id="greenGlass"/>
+        <material id="redWall"/>
+        <material id="blueWall"/>
+    </materials>
+
+    <objects>
+
+        <SPHERE material="8081_earthmap10k.bmp" radius="80" texture="0x1f154688f90" textureMode="PLANAR">
+            <position x="240" y="420" z="400"/>
+        </SPHERE>
+
+        <mesh material=""/>
+
+    </objects>
+
+</scene>

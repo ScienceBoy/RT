@@ -1,0 +1,64 @@
+<scene>
+
+    <camera>
+        <position x="1.02603" y="46.6406" z="126.967"/>
+        <target x="12.7358" y="4.78662" z="-40.4908"/>
+        <fov>16</fov>
+        <aspect>1.77778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="40" y="178" z="-16"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+    </lights>
+
+    <materials>
+        <material id="bluePlastic"/>
+        <material id="glass"/>
+        <material id="mirror"/>
+        <material id="gold"/>
+        <material id="cyanWall"/>
+        <material id="greenWall"/>
+        <material id="yellowCeil"/>
+        <material id="greenGlass"/>
+        <material id="redWall"/>
+        <material id="blueWall"/>
+    </materials>
+
+    <objects>
+        <!--<wall material="glass">
+            <p x="20" y="50" z="20"/>
+            <p x="70" y="50" z="20"/>
+            <p x="70" y="80" z="20"/>
+            <p x="20" y="80" z="20"/>
+        </wall>
+
+        <wall material="glass">
+            <p x="20" y="50" z="60"/>
+            <p x="70" y="50" z="60"/>
+            <p x="70" y="80" z="60"/>
+            <p x="20" y="80" z="60"/>
+        </wall>
+
+        <wall material="glass">
+            <p x="20" y="50" z="20"/>
+            <p x="20" y="50" z="60"/>
+            <p x="20" y="80" z="60"/>
+            <p x="20" y="80" z="20"/>
+        </wall>
+
+        <wall material="glass">
+            <p x="70" y="50" z="20"/>
+            <p x="70" y="50" z="60"/>
+            <p x="70" y="80" z="60"/>
+            <p x="70" y="80" z="20"/>
+        </wall>-->
+
+        <mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/Siedlung.obj"/>
+
+    </objects>
+
+</scene>

@@ -1,0 +1,48 @@
+<scene>
+
+    <camera>
+        <position x="-4.4362" y="3.18172" z="-1.03935"/>
+        <target x="0" y="1.575" z="-2.217"/>
+        <fov>120</fov>
+        <aspect>1.77778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="400" y="50" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+        <light>
+            <position x="200" y="500" z="300"/>
+            <color r="0.8" g="0.8" b="0.8"/>
+        </light>
+
+        <light>
+            <position x="50" y="50" z="-50"/>
+            <color r="1" g="1" b="0.2"/>
+        </light>
+
+    </lights>
+
+    <materials>
+
+        <material id="blueWall"/>
+        <material id="redWall"/>
+        <material id="greenGlass"/>
+        <material id="yellowCeil"/>
+        <material id="greenWall"/>
+        <material id="cyanWall"/>
+        <material id="gold"/>
+        <material id="mirror"/>
+        <material id="glass"/>
+        <material id="bluePlastic"/>
+    </materials>
+
+    <objects>
+
+        <mesh material="bluePlastic" file="N:/RayTracing/FS26/SW08/teapot.obj" texture="" textureMode="None"/>
+
+    </objects>
+
+</scene>

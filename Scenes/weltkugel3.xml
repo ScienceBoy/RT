@@ -1,0 +1,52 @@
+<scene>
+
+    <camera>
+        <position x="223.787" y="345.158" z="493.226"/>
+        <target x="272.814" y="488" z="347.304"/>
+        <fov>120</fov>
+        <aspect>1.77778</aspect>
+    </camera>
+
+    <lights>
+        <light>
+            <position x="224" y="94" z="380"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+
+        <light>
+            <position x="200" y="500" z="300"/>
+            <color r="0.8" g="0.8" b="0.8"/>
+        </light>
+
+        <light>
+            <position x="250" y="552" z="416"/>
+            <color r="1" g="1" b="0.2"/>
+        </light>
+
+    </lights>
+
+    <materials>
+
+        <material id="blueWall"/>
+        <material id="redWall"/>
+        <material id="greenGlass"/>
+        <material id="yellowCeil"/>
+        <material id="greenWall"/>
+        <material id="cyanWall"/>
+        <material id="gold"/>
+        <material id="mirror"/>
+        <material id="glass"/>
+        <material id="bluePlastic"/>
+    </materials>
+
+    <objects>
+
+        <SPHERE material="bluePlastic" radius="80" texture="8081_earthmap10k.bmp" textureMode="SPHERE">
+            <position x="240" y="426" z="392"/>
+        </SPHERE>
+
+        <mesh material="bluePlastic" file="N:/RayTracing/FS26/SW08/Glas.obj"  texture="8081_earthmap10k.bmp" textureMode="SPHERE"/>
+
+    </objects>
+
+</scene>
