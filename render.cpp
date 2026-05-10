@@ -885,14 +885,14 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     double n2 = h.material->IndexOfRefraction;
 
     bool inside = (ray.direction * N > 0);
-    if(inside)
+    if (inside)
     {
         N = -N;
         std::swap(n1, n2);
     }
 
     // ------------------------------------------------------------
-    // Saubere Fresnel-Berechnung
+    // Fresnel-Berechnung
     // ------------------------------------------------------------
     double R = 0.0;
 
@@ -904,7 +904,7 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
         R = h.material->reflection;
 
     // ------------------------------------------------------------
-    // Reflection korrekt skalieren
+    // Reflection skalieren
     // ------------------------------------------------------------
     double reflectionWeight = R * h.material->reflection;
 
@@ -956,7 +956,7 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     }
 
     // ------------------------------------------------------------
-    // Sauberes Energy-Mixing (kein doppelt gezähltes Licht)
+    // Energy-Mixing (kein doppelt gezähltes Licht)
     // ------------------------------------------------------------
 
     double diffuseFactor = (1.0 - reflectionWeight) * (1.0 - kt);

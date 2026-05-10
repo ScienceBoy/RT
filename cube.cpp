@@ -1,5 +1,6 @@
 #include "cube.h"
 #include "Wireframe.h"
+#include "camera.h"
 #include <iostream>
 
 //Cube::Cube() : object(Farbe(1,1,1))
@@ -92,20 +93,45 @@ void Cube::drawFlat(Wireframe& wf, DrawMode mode) const
     int x0,y0,x1,y1,x2,y2;
     double z0,z1,z2;
 
-    Material matHere = mat;
+    /*Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
         matHere = makeMaterialSimple(Farbe(1,1,0));
     else if (mode == DrawMode::HOVER)
         matHere = makeMaterialSimple(Farbe(0,1,1));
     else
-        matHere = makeMaterialSimple(mat.diffuse);
+        matHere = makeMaterialSimple(mat.diffuse);*/
 
     for(const auto& tri : tris)
     {
         Vector3D a = tri.a + position;
         Vector3D b = tri.b + position;
         Vector3D c = tri.c + position;
+
+        Vector3D M = (a+b+c) * (1.0 / 3.0);
+        Vector3D normale = (c-a).cross(b-a).normalized();
+
+        Vector3D viewDir = (M - cam[0].position).normalized();
+        Vector3D N = (normale * viewDir < 0) ? normale : -normale;
+
+        // Licht (Weltlicht)
+        Vector3D L = (lights[0].position - M).normalized();
+
+        double intensity = std::max(0.0, N * L);
+
+        Farbe base =
+            (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
+            (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
+                                            mat.diffuse;
+
+        Farbe shaded(
+            base.r * intensity,
+            base.g * intensity,
+            base.b * intensity
+        );
+
+        Material matHere = makeMaterialSimple(shaded);
+
 
         // Projektion
         wf.project(a, x0, y0, z0);

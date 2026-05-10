@@ -336,7 +336,8 @@ void SceneLoader::loadSceneFromXML(const std::string& path, Fenster& f)
                 Vector3D(std::stod(o->children[3]->attr["x"]),
                         std::stod(o->children[3]->attr["y"]),
                         std::stod(o->children[3]->attr["z"])),
-                mat
+                mat,
+                0.1
             );
 
             applyTexture(obj, o);

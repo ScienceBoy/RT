@@ -1,4 +1,5 @@
 #include "wand.h"
+#include "camera.h"
 #include "wireframe.h"
 #include <limits>
 #include <algorithm>
@@ -110,20 +111,45 @@ void Wand::drawWireframePixels(Wireframe& wf, DrawMode mode) const
 
 void Wand::drawFlat(Wireframe& wf, DrawMode mode) const
 {
-    Material matHere;
+    /*Material matHere;
 
     if (mode == DrawMode::HIGHLIGHT)
         matHere = makeMaterialSimple(Farbe(1,1,0));
     else if (mode == DrawMode::HOVER)
         matHere = makeMaterialSimple(Farbe(0,1,1));
     else
-        matHere = makeMaterialSimple(mat.diffuse);
+        matHere = makeMaterialSimple(mat.diffuse);*/
 
     // Weltpunkte der Wand
     Vector3D A = t1.a + position;
     Vector3D B = t1.b + position;
     Vector3D C = t1.c + position;
     Vector3D D = t2.c + position;
+
+    Vector3D M = (A+B+C+D) * (1.0 / 4.0);
+
+    Vector3D normale = (C-A).cross(B-A).normalized();
+
+    Vector3D viewDir = (M - cam[0].position).normalized();
+    Vector3D N = (normale * viewDir < 0) ? normale : -normale;
+
+    // Licht (Weltlicht)
+    Vector3D L = (lights[0].position - M).normalized();
+
+    double intensity = std::max(0.0, N * L);
+
+    Farbe base =
+        (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
+        (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
+                                        mat.diffuse;
+
+    Farbe shaded(
+        base.r * intensity,
+        base.g * intensity,
+        base.b * intensity
+    );
+
+    Material matHere = makeMaterialSimple(shaded);
 
     // Projektion
     int ax, ay, bx, by, cx, cy, dx, dy;

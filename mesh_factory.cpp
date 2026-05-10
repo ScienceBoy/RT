@@ -64,7 +64,8 @@ std::unique_ptr<object> createWall(
     const Vector3D& b,
     const Vector3D& c,
     const Vector3D& d,
-    const Material& mat)
+    const Material& mat,
+    double thickness)
 {
     std::vector<Dreieck> tris;
 
@@ -74,8 +75,9 @@ std::unique_ptr<object> createWall(
     Vector3D normal = edge1.cross(edge2).normalized();
 
     // ===== 2. Dicke der Wand =====
-    double thickness = 0.1; 
-    Vector3D offset = normal * thickness;
+    //double thickness = 0.1; 
+    //Vector3D offset = normal * thickness;
+    Vector3D offset(0,0,thickness);
 
     // ===== 3. 8 Eckpunkte =====
     Vector3D a1 = a;

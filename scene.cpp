@@ -68,14 +68,32 @@ void initScene(Fenster& f)
     TextureManager::loadTextureList("N:/RayTracing/FS26/Neu2026 (minimalistisch)/textures.txt");
 
     if (!backgroundTexture.loadBMP("N:/RayTracing/FS26/SW08/Hintergrund.bmp"))
-        std::cerr << "Skybox failed\n";
+       std::cerr << "Skybox failed\n";
         
-    //initCam(f);
-    //initLights(f);
-    /*initObjects(f);
-    initMeshLoaded(f);*/
+    initCam(f);
+    initLights(f);
+    //initObjects(f);
+    //initMeshLoaded(f);
     //addCoordinateSystem();
-    SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/Siedlung.xml", f);
+    std::make_unique<Text3D>(
+            "HALLO",
+            Vector3D(0,0,0) + Vector3D(0, 500, 0),
+            500 * 0.8,
+            500 * 0.3,  
+            makeMaterialSimple(Farbe(0.0,0.0,0.7))
+        );
+
+    /*scene.push_back(createWall(
+        Vector3D(0, 500, 0),
+        Vector3D(500, 500, 0),
+        Vector3D(500, 500, 500),
+        Vector3D(0, 500, 500),
+        makeMaterialSimple(Farbe(0.0,0.0,0.7)),
+        0.1
+    ));
+    */
+    
+    //SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/Siedlung.xml", f);
     if (wolkeKugelnVorhanden) addWolkenAusKugeln(10, 7, 5);
     if (terrainVorhanden) addTerrain(512, (GroundMax.x - GroundMin.x) / 4.0, 3, 6);
     if (wasserVorhanden) addWasser(512, GroundMax.x - GroundMin.x, 3, 3);
@@ -168,7 +186,8 @@ void initObjects(Fenster& f)
         Vector3D(w, h, 0),
         Vector3D(w, h, z),
         Vector3D(nullBreite, h, z),
-        makeMaterialSimple(Farbe(0.0,0.0,0.7))
+        makeMaterialSimple(Farbe(0.0,0.0,0.7)),
+        0.1
     ));
 
     // 🟦 Decke
@@ -177,7 +196,8 @@ void initObjects(Fenster& f)
         Vector3D(w, nullHoehe, 0),
         Vector3D(w, nullHoehe, z),
         Vector3D(nullBreite, nullHoehe, z),
-        makeMaterialSimple(Farbe(1,1,0))
+        makeMaterialSimple(Farbe(1,1,0)),
+        0.1
     ));
 
     // 🟥 Linke Wand
@@ -186,7 +206,8 @@ void initObjects(Fenster& f)
         Vector3D(nullBreite, h, 0),
         Vector3D(nullBreite, h, z),
         Vector3D(nullBreite, nullHoehe, z),
-        makeMaterialSimple(Farbe(1,0,0))
+        makeMaterialSimple(Farbe(1,0,0)),
+        0.1
     ));
 
     // 🟩 Rechte Wand
@@ -195,7 +216,8 @@ void initObjects(Fenster& f)
         Vector3D(w, h, 0),
         Vector3D(w, h, z),
         Vector3D(w, nullHoehe, z),
-        makeMaterialSimple(Farbe(0,1,0))
+        makeMaterialSimple(Farbe(0,1,0)),
+        0.1
     ));
 
     // ⬜ Hintere Wand
@@ -204,7 +226,8 @@ void initObjects(Fenster& f)
         Vector3D(w, nullHoehe, z),
         Vector3D(w, h, z),
         Vector3D(nullBreite, h, z),
-        makeMaterialSimple(Farbe(0,1,1))
+        makeMaterialSimple(Farbe(0,1,1)),
+        0.1
     ));
 
     // Vorderwand bewusst NICHT hinzufügen
@@ -324,6 +347,7 @@ void addCoordinateSystem()
             std::to_string((int)tx),
             px + Vector3D(0, tickSize*1.5, 0),
             tickSize*0.8,
+            tickSize * 0.3,  
             rot
         ));
     }
@@ -338,6 +362,7 @@ void addCoordinateSystem()
             std::to_string((int)ty),
             py + Vector3D(tickSize*1.2, 0, 0),
             tickSize*0.8,
+            tickSize * 0.3,  
             gruen
         ));
     }
@@ -352,6 +377,7 @@ void addCoordinateSystem()
             std::to_string((int)tz),
             pz + Vector3D(0, tickSize*1.5, 0),
             tickSize*0.8,
+            tickSize * 0.3,  
             blau
         ));
     }

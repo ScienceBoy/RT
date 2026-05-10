@@ -4,6 +4,7 @@
 #include <numbers>
 #include <vector>
 #include <random>
+#include "camera.h"
 #include "TextureManager.h"
 
 // Standardkonstruktor
@@ -80,7 +81,7 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
     int slices = 32;   // um Y-Achse
     int stacks = 16;   // von oben nach unten
 
-    Material matHere = mat;
+    /*Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
         matHere = makeMaterialSimple(Farbe(1,1,0));
@@ -89,6 +90,7 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
     else
         //matHere = makeMaterialSimple(mat.diffuse);
         matHere = makeMaterialSimple(getDebugColor(mat));
+    */
 
     for (int i = 0; i < stacks; i++)
     {
@@ -134,6 +136,36 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
             // Projektion
             int x0,y0,x1,y1,x2,y2,x3,y3;
             double z0,z1,z2,z3;
+
+            // Weltkoordinaten
+            Vector3D A = p0;
+            Vector3D B = p1;
+            Vector3D C = p2;
+            Vector3D D = p3;
+            Vector3D M = (A+B+C+D) * (1.0 / 4.0);
+
+            Vector3D normale = (C-A).cross(B-A).normalized();
+
+            Vector3D viewDir = (M - cam[0].position).normalized();
+            Vector3D N = (normale * viewDir < 0) ? normale : -normale;
+
+            // Licht (Weltlicht)
+            Vector3D L = (lights[0].position - M).normalized();
+
+            double intensity = std::max(0.0, N * L);
+
+            Farbe base =
+                (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
+                (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
+                                                mat.diffuse;
+
+            Farbe shaded(
+                base.r * intensity,
+                base.g * intensity,
+                base.b * intensity
+            );
+
+            Material matHere = makeMaterialSimple(shaded);
 
             wf.project(p0,x0,y0,z0);
             wf.project(p1,x1,y1,z1);

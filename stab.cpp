@@ -122,12 +122,12 @@ void Stab::drawFlat(Wireframe& wf, DrawMode mode) const
 {
     int steps = 24; // mehr Segmente = runder
 
-    Material matHere = mat;
+    /*Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
         matHere = makeMaterialSimple(Farbe(1,1,0));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));
+        matHere = makeMaterialSimple(Farbe(0,1,1));*/
 
     Vector3D axis = (p2 - p1).normalized();
 
@@ -158,8 +158,10 @@ void Stab::drawFlat(Wireframe& wf, DrawMode mode) const
         Vector3D edge2 = p3 - p0;
         Vector3D N = edge1.cross(edge2).normalized();
 
-        // einfache Lichtquelle (wie bei Dreieck)
-        Vector3D L = cam[0].position.normalized();
+        // einfache Lichtquelle
+        Vector3D M = (p0+p1_+p2_+p3) * (1.0 / 4.0);
+        Vector3D L = (lights[0].position - M).normalized();
+        //Vector3D L = cam[0].position.normalized();
         double intensity = std::max(0.0, N * L);
 
         Farbe base;

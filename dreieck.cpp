@@ -167,12 +167,13 @@ void Dreieck::drawFlat(Wireframe& wf, DrawMode mode) const
     Vector3D A = a + position;
     Vector3D B = b + position;
     Vector3D C = c + position;
+    Vector3D M = (A+B+C) * (1.0 / 3.0);
 
-    Vector3D viewDir = (A - cam[0].position).normalized();
+    Vector3D viewDir = (M - cam[0].position).normalized();
     Vector3D N = (normale * viewDir < 0) ? normale : -normale;
 
     // Licht (Weltlicht)
-    Vector3D L = (Vector3D(100,100,100) - A).normalized();
+    Vector3D L = (lights[0].position - M).normalized();
 
     double intensity = std::max(0.0, N * L);
 

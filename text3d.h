@@ -1,34 +1,52 @@
 #pragma once
 #include "object.h"
 #include "dreieck.h"
-#include "ray.h"
-#include "hit.h"
-#include "material.h"
-#include <vector>
-#include <string>
+#include <unordered_map>
+
+struct Rect2D
+{
+    double x0, y0;
+    double x1, y1;
+};
+
+struct Glyph
+{
+    std::vector<Rect2D> rects;
+};
 
 class Text3D : public object
 {
 public:
-    std::string text;
-    double size;
-    std::vector<Dreieck> tris;
+    Text3D(const std::string& text,
+           const Vector3D& pos,
+           double size,
+           double depth,
+           const Material& mat);
 
-    Text3D(const std::string& t, const Vector3D& pos, double s, const Material& mat);
-
-    // Setzt Weltposition
     void setPosition(const Vector3D& pos);
 
-    // Intersection für Picking
+    void drawFlat(Wireframe& wf, DrawMode mode) const;
+    void drawWireframePixels(Wireframe& wf, DrawMode mode) const;
+
     void intersect(const Ray& ray, Hit& hit) const override;
-
-    void drawFlat(Wireframe &wf, DrawMode mode) const override;
-    void drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL) const override;
-
-    virtual void getWorldAABB(Vector3D& min, Vector3D& max) const;
+    void getWorldAABB(Vector3D& minOut, Vector3D& maxOut) const;
 
 private:
+    std::string text;
+    double size;
+    double depth;
+
+    std::vector<Dreieck> tris;
+
+    std::unordered_map<char, Glyph> font;
+
+    void buildFont();
     void buildText();
-    void addDigit(char d, const Vector3D& offset);
-    void addLine(const Vector3D& a, const Vector3D& b);
+
+    void addGlyphMesh(char c, const Vector3D& offset);
+    void extrudeGlyph(const Glyph& g, const Vector3D& offset);
+
+    Glyph makeGlyph(char c, double s);
 };
+
+static std::vector<Vector3D> rect(double x0, double y0, double x1, double y1, double s);
