@@ -21,6 +21,8 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
             std::atomic<int>& linesDone, std::atomic<bool>& stopRendering)
 {
     VolumeResult vol;
+    int HaltonSamples = 16; // 16 Berechnungen pro Pixel gegen Antialiasing. Dafür musst ich clamp() ausschalten
+    if (!antialiasing) HaltonSamples = 1;
 
     for (int x = xStart; x < xEnd; x++)
         f.pixel(x, yStart, Farbe(1,0,0)), f.pixel(x, yEnd-1, Farbe(1,0,0));
@@ -41,7 +43,6 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
             if (stopRendering.load())
                 return;
 
-            int HaltonSamples = 4; // 4 Berechnungen pro Pixel gegen Antialiasing. Mit mehr als 4 wird es zu dunkel: Fehler noch nicht klar
             Farbe farbe(0,0,0);
 
             for (int s = 0; s < HaltonSamples; s++) 
@@ -74,7 +75,7 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
                 else
                 {
                     //background = Texture::backgroundCalc("sky", r.direction.y);
-                    farbe = Texture::backgroundCalc("sky", r.direction);
+                    farbe = farbe + Texture::backgroundCalc("sky", r.direction);
                     if (nebelVorhanden) background = nebel(h, background);
                     if (rauchVorhanden) background = rauch(r, background);
                     if (wolkeVolumeVorhanden) background = wolke(r, background);
@@ -83,7 +84,7 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
 
             }
             
-            //farbe = farbe * (1.0 / HaltonSamples);
+            farbe = farbe * (1.0 / HaltonSamples);
 
             f.pixel(x,y, farbe);
 
@@ -888,7 +889,7 @@ Hit ClosestPointOfIntersection(const Ray& ray)
 Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
 {
     if(depth <= 0)
-        return Farbe(0,0,0);
+        return Texture::backgroundCalc("sky", ray.direction.y);
 
     Hit h = ClosestPointOfIntersection(ray);
     if(!h.hit)

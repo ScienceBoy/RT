@@ -54,6 +54,8 @@ Vector3D WolkeboxMax(90.0, 20.0, -90.0);
 bool terrainVorhanden = false;
 bool wasserVorhanden = false;
 
+bool antialiasing = true;
+
 extern Texture backgroundTexture;
 
 

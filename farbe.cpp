@@ -39,9 +39,9 @@ Farbe& Farbe::operator*=(const Farbe& c) {
 
 // Werte auf 0-1 beschränken
 void Farbe::clamp() {
-    r = std::max(0.0, std::min(1.0, r));
-    g = std::max(0.0, std::min(1.0, g));
-    b = std::max(0.0, std::min(1.0, b));
+    //r = std::max(0.0, std::min(1.0, r));
+    // = std::max(0.0, std::min(1.0, g));
+    //b = std::max(0.0, std::min(1.0, b));
 }
 
 // Umwandlung in COLORREF (Windows 0-255)

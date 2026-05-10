@@ -37,6 +37,8 @@ extern Vector3D GroundMax;
 extern bool terrainVorhanden;
 extern bool wasserVorhanden;
 
+extern bool antialiasing;
+
 extern Vector3D sceneMin;
 extern Vector3D sceneMax;
 
