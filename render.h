@@ -94,3 +94,5 @@ Farbe wolkeInBox(Ray ray, double t_entry, double t_exit, Farbe cloudColor);
 bool intersectCloudBox(const Ray &ray, double &tmin, double &tmax);
 
 void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int octaves);
+
+double Halton(int index, int base);

@@ -72,29 +72,12 @@ void initScene(Fenster& f)
         
     initCam(f);
     initLights(f);
-    //initObjects(f);
+    initObjects(f);
     //initMeshLoaded(f);
     //addCoordinateSystem();
-    std::make_unique<Text3D>(
-            "HALLO",
-            Vector3D(0,0,0) + Vector3D(0, 500, 0),
-            500 * 0.8,
-            500 * 0.3,  
-            makeMaterialSimple(Farbe(0.0,0.0,0.7))
-        );
-
-    /*scene.push_back(createWall(
-        Vector3D(0, 500, 0),
-        Vector3D(500, 500, 0),
-        Vector3D(500, 500, 500),
-        Vector3D(0, 500, 500),
-        makeMaterialSimple(Farbe(0.0,0.0,0.7)),
-        0.1
-    ));
-    */
     
     //SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/Siedlung.xml", f);
-    if (wolkeKugelnVorhanden) addWolkenAusKugeln(10, 7, 5);
+    if (wolkeKugelnVorhanden) addWolkenAusKugeln(1, 10, 50);
     if (terrainVorhanden) addTerrain(512, (GroundMax.x - GroundMin.x) / 4.0, 3, 6);
     if (wasserVorhanden) addWasser(512, GroundMax.x - GroundMin.x, 3, 3);
     computeSceneBounds();
@@ -164,9 +147,9 @@ void addWolkenAusKugeln(int Anzahl, int Tiefe, int Groesse)
 // Initialisierung der lights
 void initLights(Fenster& f)
 {
-    lights.push_back(light(Vector3D(400.0, 50.0, 100.0), Farbe(1,1,1)));     // oben im Raum
-    lights.push_back(light(Vector3D(200.0, 500.0, 300.0), Farbe(0.8,0.8,0.8))); // seitlich
-    lights.push_back(light(Vector3D(50.0, 50.0, -50.0), Farbe(1,1,0.2))); // vorne
+    lights.push_back(light(Vector3D(400.0, 500.0, -100.0), Farbe(1,1,1)));     // oben hinter der Kamera
+    //lights.push_back(light(Vector3D(200.0, 500.0, 300.0), Farbe(0.8,0.8,0.8))); // seitlich
+    //lights.push_back(light(Vector3D(50.0, 50.0, -50.0), Farbe(1,1,0.2))); // vorne
 }
 
 void initObjects(Fenster& f)
@@ -179,6 +162,14 @@ void initObjects(Fenster& f)
     double nullHoehe = 0; // *1.0/6.0;
     double z = 800; //maxTiefe; // Tiefe des Raums
 
+    // Text
+    std::make_unique<Text3D>(
+        "HALLO",
+        Vector3D(0,0,0) + Vector3D(0, 500, 0),
+        h * 0.2,
+        w * 0.05,  
+        makeMaterialSimple(Farbe(0.0,0.0,0.7))
+    );
     
     // 🟦 Boden
     scene.push_back(createWall(

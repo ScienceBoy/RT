@@ -41,34 +41,54 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
             if (stopRendering.load())
                 return;
 
-            //Ray r(Vector3D(x,y,0), Vector3D(0,0,1));    // sende Ray Parallel-projektion
-            Ray r = cam[0].makeRay(x, y, f);
-            Hit h = ClosestPointOfIntersection(r);      // Prüfen auf Treffen von Objekten
+            int HaltonSamples = 4; // 4 Berechnungen pro Pixel gegen Antialiasing. Mit mehr als 4 wird es zu dunkel: Fehler noch nicht klar
+            Farbe farbe(0,0,0);
 
-            if(h.hit)                             // object hit ?
+            for (int s = 0; s < HaltonSamples; s++) 
             {
-                //Farbe farbe = flatShading(h.farbe, h.normale, h.punkt); // Nur Flat Shading
-                //Farbe farbe = flatShadingAndshadow(h.farbe, h.normale, h.punkt);  // Flat Shading mit Schatten
-                //farbe = farbe * (1.0 - h.t/(2*sceneMax.z));    // Depth Cueing
-                //Farbe farbe = blinnPhong(*h.material, h.normale, h.position, cam[0].position); // Blinn-Phong
-                Farbe farbe = trace(r, 10, 1.0); 
-                //farbe = farbe + Farbe(0.05, 0.05, 0.05);  // Globale ambiente Helligkeit
-                if (nebelVorhanden) farbe = nebel(h, farbe);
-                if (rauchVorhanden) farbe = rauch(r, farbe);
-                if (wolkeVolumeVorhanden) farbe = wolke(r, farbe);
-                f.pixel(x,y, farbe);
+                double hx = Halton(s, 2);
+                double hy = Halton(s, 3);
+
+                // Subpixel offset
+                double sx = x + hx - 0.5;
+                double sy = y + hy - 0.5;
+
+                //Ray r(Vector3D(x,y,0), Vector3D(0,0,1));    // sende Ray Parallel-projektion
+                //Ray r = cam[0].makeRay(x, y, f);
+                Ray r = cam[0].makeRay(sx, sy, f);
+                Hit h = ClosestPointOfIntersection(r);      // Prüfen auf Treffen von Objekten
+
+                if(h.hit)                             // object hit ?
+                {
+                    //Farbe farbe = flatShading(h.farbe, h.normale, h.punkt); // Nur Flat Shading
+                    //Farbe farbe = flatShadingAndshadow(h.farbe, h.normale, h.punkt);  // Flat Shading mit Schatten
+                    //farbe = farbe * (1.0 - h.t/(2*sceneMax.z));    // Depth Cueing
+                    //Farbe farbe = blinnPhong(*h.material, h.normale, h.position, cam[0].position); // Blinn-Phong
+                    //Farbe farbe = trace(r, 10, 1.0); 
+                    farbe = farbe + trace(r, 10, 1.0);
+                    //farbe = farbe + Farbe(0.05, 0.05, 0.05);  // Globale ambiente Helligkeit
+                    if (nebelVorhanden) farbe = nebel(h, farbe);
+                    if (rauchVorhanden) farbe = rauch(r, farbe);
+                    if (wolkeVolumeVorhanden) farbe = wolke(r, farbe);
+                }
+                else
+                {
+                    //background = Texture::backgroundCalc("sky", r.direction.y);
+                    farbe = Texture::backgroundCalc("sky", r.direction);
+                    if (nebelVorhanden) background = nebel(h, background);
+                    if (rauchVorhanden) background = rauch(r, background);
+                    if (wolkeVolumeVorhanden) background = wolke(r, background);
+                    //f.pixel(x,y, background);
+                }
+
             }
-            else
-            {
-                //background = Texture::backgroundCalc("sky", r.direction.y);
-                background =  Texture::backgroundCalc("sky", r.direction);
-                if (nebelVorhanden) background = nebel(h, background);
-                if (rauchVorhanden) background = rauch(r, background);
-                if (wolkeVolumeVorhanden) background = wolke(r, background);
-                f.pixel(x,y, background);
-            }
+            
+            //farbe = farbe * (1.0 / HaltonSamples);
+
+            f.pixel(x,y, farbe);
+
         }
-
+        
         linesDone++;
     }
 }
@@ -894,19 +914,32 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     // ------------------------------------------------------------
     // Fresnel-Berechnung
     // ------------------------------------------------------------
-    double R = 0.0;
+    /*double R = 0.0;
 
     bool hasIOR = (h.material->IndexOfRefraction > 0.0);
 
     if(hasIOR)
         R = fresnel(ray.direction, N, n1, n2);
     else
-        R = h.material->reflection;
+        R = h.material->reflection;*/
+
+    double Rf = 0.0;
+
+    bool hasIOR = (h.material->IndexOfRefraction > 0.0);
+
+    if (hasIOR)
+    {
+        Rf = fresnel(ray.direction, N, n1, n2);
+    }
+    else
+    {
+        Rf = h.material->reflection;
+    }
 
     // ------------------------------------------------------------
     // Reflection skalieren
     // ------------------------------------------------------------
-    double reflectionWeight = R * h.material->reflection;
+    //double reflectionWeight = R * h.material->reflection;
 
     Farbe reflectColor(0,0,0);
     Farbe refractColor(0,0,0);
@@ -914,7 +947,8 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     // ------------------------------------------------------------
     // Reflection
     // ------------------------------------------------------------
-    if(reflectionWeight > 0.0)
+    //if(reflectionWeight > 0.0)
+    if(Rf > 0.0)
     {
         Vector3D Rdir = reflect(ray.direction, N);
         Ray reflectRay(h.position + N*1e-4, Rdir);
@@ -959,7 +993,7 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     // Energy-Mixing (kein doppelt gezähltes Licht)
     // ------------------------------------------------------------
 
-    double diffuseFactor = (1.0 - reflectionWeight) * (1.0 - kt);
+    /*double diffuseFactor = (1.0 - reflectionWeight) * (1.0 - kt);
 
     Farbe result(0,0,0);
 
@@ -971,6 +1005,18 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
 
     // Refraction
     result += refractColor * kt;
+
+    return result;*/
+
+    // Energy-consistent mixing
+
+    double kd = (1.0 - Rf) * (1.0 - kt);
+    double kr = Rf * (1.0 - kt);
+    double ktw = kt;
+
+    Farbe result = localColor * kd
+                + reflectColor * kr
+                + refractColor * ktw;
 
     return result;
 }
@@ -1007,3 +1053,18 @@ double fresnel(const Vector3D& I, const Vector3D& N, double n1, double n2)
     return R0 + (1 - R0) * pow(1 - fabs(cosI), 5);
 }
 
+double Halton(int index, int base)
+{
+    double result = 0.0;
+    double f = 1.0;
+    int i = index;
+
+    while (i > 0)
+    {
+        f /= base;
+        result += f * (i % base);
+        i /= base;
+    }
+
+    return result;
+}
