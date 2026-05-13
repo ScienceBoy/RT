@@ -5,6 +5,7 @@ enum class MaterialType
 {
     Mirror,
     Gold,
+    Earth,
     BluePlastic,
     Glass,
     GreenGlass,
@@ -21,6 +22,7 @@ public:
 private:
     static const Material MIRROR;
     static const Material GOLD;
+    static const Material EARTH;    
     static const Material BLUE_PLASTIC;
     static const Material GLASS;
     static const Material GREEN_GLASS;

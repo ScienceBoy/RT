@@ -1,3 +1,5 @@
 SchachbrettMitPfeilenUndKoordinaten.bmp = "C:/Users/JumpStart/OneDrive - Hochschule Luzern/Studentenausbildung/Module/RayTracing/FS26/SW10/SchachbrettMitPfeilenUndKoordinaten.bmp"
 Schachbrett.bmp = "C:/Users/JumpStart/OneDrive - Hochschule Luzern/Studentenausbildung/Module/RayTracing/FS26/SW10/Schachbrett.bmp"
 8081_earthmap10k.bmp = "C:/Users/JumpStart/OneDrive - Hochschule Luzern/Studentenausbildung/Module/RayTracing/FS26/SW08/8081_earthmap10k.bmp"
+StandardUntergrund.bmp = "C:/Users/JumpStart/OneDrive - Hochschule Luzern/Studentenausbildung/Module/RayTracing/FS26/SW08/StandardUntergrund.bmp"
+StandardUntergrund2.bmp = "C:/Users/JumpStart/OneDrive - Hochschule Luzern/Studentenausbildung/Module/RayTracing/FS26/SW08/StandardUntergrund2.bmp"

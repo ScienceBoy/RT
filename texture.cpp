@@ -125,7 +125,9 @@ Farbe Texture::getPixelAt(int x, int y) const {
     float r = ((color >> 16) & 0xFF) / 255.0f;
     float g = ((color >> 8)  & 0xFF) / 255.0f;
     float b = ( color        & 0xFF) / 255.0f;
-    return Farbe(r, g, b);
+    
+    // sRGB -> Linear
+    return sRGBtoLinear(Farbe(r, g, b));
 }
 
 Farbe Texture::lerp(Farbe v0, Farbe v1, double t) {

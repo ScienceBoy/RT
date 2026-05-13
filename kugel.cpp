@@ -51,9 +51,9 @@ void Kugel::intersect(const Ray& ray, Hit& hit) const
     double t1 = (-b - sqrtD) / (2*a);
     double t2 = (-b + sqrtD) / (2*a);
 
-    double t = t1;
-    if(t < 1e-6) t = t2;
-    if(t < 1e-6) return;
+    double t = (t1 > 1e-6) ? t1 : ((t2 > 1e-6) ? t2 : -1);
+    if (t < 0) return;
+    //if(t < 1e-6) return;
 
     if(t < hit.t)
     {
@@ -66,6 +66,7 @@ void Kugel::intersect(const Ray& ray, Hit& hit) const
         Vector3D N = (hit.position - position).normalized(); // Normale relativ zu Zentrum
         if (N * ray.direction > 0) N = N * -1;
         hit.normale = N;
+        hit.geomNormale = N;
     }
 }
 
@@ -146,8 +147,9 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
 
             Vector3D normale = (C-A).cross(B-A).normalized();
 
-            Vector3D viewDir = (M - cam[0].position).normalized();
-            Vector3D N = (normale * viewDir < 0) ? normale : -normale;
+            //Vector3D viewDir = (M - cam[0].position).normalized();
+            //Vector3D N = (normale * viewDir < 0) ? normale : -normale;
+            Vector3D N = normale;
 
             // Licht (Weltlicht)
             Vector3D L = (lights[0].position - M).normalized();
@@ -174,7 +176,7 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
 
             if (!useFlat)
             {
-                wf.drawLine(x0,y0,z0,x1,y1,z1,matHere);
+                wf.drawLine(x0,y0,z0,x1,y1,z1, matHere);
                 wf.drawLine(x2,y2,z2,x3,y3,z3, matHere);
             }
             

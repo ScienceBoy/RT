@@ -12,7 +12,8 @@ Dreieck::Dreieck()
 
         edge1 = b - a;
         edge2 = c - a;
-        normale = edge1.cross(edge2).normalized();
+        normale = edge1.cross(edge2).normalized();  
+        geomNormale = normale;
 
         // Bounding Box (LOKAL!)
         minBound = Vector3D(
@@ -50,6 +51,7 @@ Dreieck::Dreieck(const Vector3D& A, const Vector3D& B, const Vector3D& C, const 
         edge1 = b - a;
         edge2 = c - a;
         normale = edge1.cross(edge2).normalized();
+        geomNormale = normale;
 
         // Bounding Box (LOKAL!)
         minBound = Vector3D(
@@ -118,6 +120,7 @@ void Dreieck::intersect(const Ray& ray, Hit& hit) const
         hit.t = t;
         hit.obj = this;
         hit.material = &mat;
+        hit.geomNormale = geomNormale;
 
         //  zurück in Welt
         hit.position = localRay.origin + localRay.direction * t;
@@ -139,7 +142,7 @@ void Dreieck::intersect(const Ray& ray, Hit& hit) const
             gamma * nC).normalized();
 
         // Frontface-Test mit GEOMETRISCHER Normale
-        hit.frontFace = (normale * ray.direction < 0);
+        hit.frontFace = (geomNormale * ray.direction < 0);
 
         // Normale ggf. umdrehen 
         hit.normale = hit.frontFace ? smoothN : smoothN * -1;

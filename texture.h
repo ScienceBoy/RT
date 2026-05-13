@@ -17,9 +17,9 @@ public:
 
     static Farbe lerp(Farbe v0, Farbe v1, double t);
     static Farbe backgroundCalc(std::string type);
-    static Farbe texture(Farbe farbe, Hit hit);
     static Farbe backgroundCalc(std::string type, double t);
     static Farbe backgroundCalc(std::string type, Vector3D dir);
+    static Farbe texture(Farbe farbe, Hit hit);
 
 
     int width() const { return m_width; }

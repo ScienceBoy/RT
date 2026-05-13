@@ -7,6 +7,8 @@
 #include <memory>
 #include "object.h"
 #include "TextureManager.h"
+#include "smokeBox.h"
+
 
 class light;  // Forward Declaration
 
@@ -14,7 +16,13 @@ class light;  // Forward Declaration
 extern std::vector<std::unique_ptr<object>> scene;
 extern std::vector<light> lights;
 extern std::vector<Camera> cam;
-extern Kugel* jumpingSphere;
+
+extern double exposure;
+extern bool umgebungsbild;
+extern Texture backgroundTexture;
+
+//extern Kugel* jumpingSphere;
+
 extern Farbe fogColor;
 extern bool nebelBeleuchtet;
 extern double fogDensity;
@@ -22,9 +30,12 @@ extern Farbe fogLightColor;
 extern bool nebelVorhanden;
 extern double fogPartVisible;   // Anteil "Nebel sichtbar"
 extern double fogPartLightning; // Anteil "Nebel leuchtet"
+
 extern bool rauchVorhanden;
-extern Vector3D RauchboxMin;
-extern Vector3D RauchboxMax;
+extern std::vector<SmokeBox> smokeBoxes;
+//extern Vector3D RauchboxMin;
+//extern Vector3D RauchboxMax;
+
 extern bool wolkeVolumeVorhanden;
 extern bool wolkeKugelnVorhanden;
 extern Vector3D WolkeboxMin;
@@ -38,6 +49,7 @@ extern bool terrainVorhanden;
 extern bool wasserVorhanden;
 
 extern bool antialiasing;
+extern int antialiasingSamples;
 
 extern Vector3D sceneMin;
 extern Vector3D sceneMax;

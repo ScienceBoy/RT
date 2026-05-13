@@ -23,3 +23,9 @@ public:
     // Umwandlung in Windows COLORREF (0-255)
     unsigned int toCOLORREF() const;
 };
+
+Farbe sRGBtoLinear(const Farbe &sRGBColor);
+
+Farbe linearToSRGB(const Farbe &linearColor);
+
+Farbe toneMapping(const Farbe &hdrColor, double exposure);

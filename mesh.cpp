@@ -115,7 +115,7 @@ bool Mesh::loadOBJ(const std::string& filename) {
                 Vector3D edge2 = vertices[i3] - vertices[i1];
                 tri.normale = edge1.cross(edge2).normalized();
             }
-
+            tri.geomNormale = tri.normale;
             triangles.push_back(tri);
         }
     }

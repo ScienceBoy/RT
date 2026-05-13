@@ -94,6 +94,7 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
     Vector3D N = (p - axisPoint).normalized();
     if (N * ray.direction > 0) N = N * -1;
     hit.normale = N;
+    hit.geomNormale = N;
 
     Vector3D axisDir = ca.normalized();
     Vector3D radial = (p - axisPoint).normalized();

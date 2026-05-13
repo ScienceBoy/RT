@@ -28,7 +28,11 @@
 std::vector<std::unique_ptr<object>> scene;
 std::vector<light> lights;
 std::vector<Camera> cam;
-Kugel* jumpingSphere = nullptr;
+
+//Kugel* jumpingSphere = nullptr;
+
+bool umgebungsbild = true;
+double exposure = 0.0;  // Lichtverstärkung von -1.0 bis +2.0   exposure = +1  → doppelt so hell  /  exposure = +2  → 4x heller  /  exposure = -1  → halb so hell
 
 bool nebelVorhanden = false;
 double fogDensity = 0.015;
@@ -39,25 +43,44 @@ double fogPartVisible    = 0.15; // Anteil "Nebel sichtbar"
 double fogPartLightning  = 0.85; // Anteil "Nebel leuchtet"
 
 bool rauchVorhanden = false;
-Vector3D RauchboxMin(-1.0, 0.0, -1.0);
-Vector3D RauchboxMax( 1.0, 6.0,  1.0);
+std::vector<SmokeBox> smokeBoxes = {
+    SmokeBox(
+        Vector3D(1.0,0,1.0),
+        Vector3D(2.0,4.0,2.0),
+        Farbe(0.8,0.8,1.0),
+        50,
+        0),
+    SmokeBox(
+        Vector3D(-1.0,0,-1.0),
+        Vector3D( 1.0,6.0, 1.0),
+        Farbe(1,1,1),
+        100,
+        0),
+    SmokeBox(
+        Vector3D(-40,0,30),
+        Vector3D(-20,80,50),
+        Farbe(1.0,0.7,0.5),
+        200,
+        0)
+};
+
+//Vector3D RauchboxMin(-1.0, 0.0, -1.0);
+//Vector3D RauchboxMax( 1.0, 6.0,  1.0);
 
 bool wolkeVolumeVorhanden = false;
 bool wolkeKugelnVorhanden = false;
 Vector3D SkyMin(0.0, 30.0, -100.0);
 Vector3D SkyMax(100.0, 100.0,  100.0);
 Vector3D GroundMin(-100.0, -20.0, -100.0);
-Vector3D GroundMax(100.0, 00.0,  100.0);
+Vector3D GroundMax(100.0, 0.0,  100.0);
 Vector3D WolkeboxMin(0.0, 1.0, 0.0);
 Vector3D WolkeboxMax(90.0, 20.0, -90.0);
 
 bool terrainVorhanden = false;
-bool wasserVorhanden = false;
+bool wasserVorhanden = true;
 
 bool antialiasing = true;
-
-extern Texture backgroundTexture;
-
+int antialiasingSamples = 9; // 1 = no antialiasiing   16 = good antialiasing
 
 //Camera cam(Vector3D(0.5,0.5,-250), Vector3D(0.5,0.5,1.0), 90.0, 16.0/9.0);
 
@@ -69,19 +92,20 @@ void initScene(Fenster& f)
 {
     TextureManager::loadTextureList("N:/RayTracing/FS26/Neu2026 (minimalistisch)/textures.txt");
 
-    if (!backgroundTexture.loadBMP("N:/RayTracing/FS26/SW08/Hintergrund.bmp"))
-       std::cerr << "Skybox failed\n";
+    if (umgebungsbild) backgroundTexture.loadBMP("N:/RayTracing/FS26/SW08/Hintergrund.bmp");
         
-    initCam(f);
-    initLights(f);
-    initObjects(f);
+    //initCam(f);
+    //initLights(f);
+    //initObjects(f);
     //initMeshLoaded(f);
     //addCoordinateSystem();
-    
-    //SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/Siedlung.xml", f);
+    //addSphere(Vector3D(0.0,0.0,0.0), 63710000, MaterialType::Earth);
+    //addSphere(Vector3D(0.0,3.0,0.0), 80, MaterialType::BluePlastic);
+
+    SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/StandardUntergrundFlaeche.xml", f);
     if (wolkeKugelnVorhanden) addWolkenAusKugeln(1, 10, 50);
     if (terrainVorhanden) addTerrain(512, (GroundMax.x - GroundMin.x) / 4.0, 3, 6);
-    if (wasserVorhanden) addWasser(512, GroundMax.x - GroundMin.x, 3, 3);
+    if (wasserVorhanden) addWasser(512, GroundMax.x - GroundMin.x, 4, 3);
     computeSceneBounds();
 }
 void initMeshLoaded(Fenster& f)
@@ -119,6 +143,7 @@ void addWasser(int gridResolution, int sizeXZ, int heightScale, int octaves)
     //auto Wasserboden = std::make_unique<Mesh>(Material(Farbe(0,0,1),Farbe(0,0,1),Farbe(0,0,0),0.3,1.0,0.0,0.0,0.0, 0.0, Farbe(0,0,0)));
     //Wasserboden->generateTerrain(gridResolution, sizeXZ, 0, 1);
     //scene.push_back(std::move(Wasserboden));
+    //Material mat = Material(Farbe(0,0,1),Farbe(0,0,1),Farbe(0,0,1),0.2,0.8,150,0.5,1.05,  0.0, Farbe(0,0,0));
     //Material mat = Material(Farbe(0,0,1),Farbe(0,0,1),Farbe(0,0,1),0.2,0.8,150,0.5,1.33, 0.3, Farbe(0.0,0.0,0.0));
     Material mat = MaterialLibrary::get(MaterialType::Wasser);
     auto wasser = std::make_unique<Mesh>(mat);
@@ -248,10 +273,10 @@ void initObjects(Fenster& f)
     scene.push_back(std::move(cube));
 
     // Kugel direkt über der Box
-    double sphereRadius = 50;
-    Vector3D spherePos(cubePos.x, cubePos.y + cubeSize/2 + sphereRadius, cubePos.z);
-    jumpingSphere = new Kugel(spherePos, sphereRadius, MaterialLibrary::get(MaterialType::Mirror));
-    scene.push_back(std::unique_ptr<object>(jumpingSphere));
+    //double sphereRadius = 50;
+    //Vector3D spherePos(cubePos.x, cubePos.y + cubeSize/2 + sphereRadius, cubePos.z);
+    //jumpingSphere = new Kugel(spherePos, sphereRadius, MaterialLibrary::get(MaterialType::Mirror));
+    //scene.push_back(std::unique_ptr<object>(jumpingSphere));
 }
 
 void computeSceneBounds()

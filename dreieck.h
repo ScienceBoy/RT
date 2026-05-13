@@ -13,7 +13,7 @@ class Dreieck : public object
 public:
     Vector3D a, b, c;       // lokale Eckpunkte
     Vector3D edge1, edge2;  // Kanten
-    Vector3D normale;       // geometrische Normale
+    Vector3D normale, geomNormale;       // interpolierte und geometrische Normale
     Vector3D nA, nB, nC;    // Vertex-Normalen
     Vector2D uvA, uvB, uvC;
 

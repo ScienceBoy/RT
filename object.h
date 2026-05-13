@@ -46,9 +46,7 @@ public:
     void setPosition(const Vector3D& pos) { position = pos; }
     virtual void drawWireframePixels(Wireframe& wf, DrawMode mode) const = 0;
     virtual void drawFlat(Wireframe& wf, DrawMode mode) const = 0;
-    static bool intersectAABB(const Ray& ray,
-                            const Vector3D& minB,
-                            const Vector3D& maxB)
+    static bool intersectAABB(const Ray& ray, const Vector3D& minB, const Vector3D& maxB)
     {
         double tmin = -INFINITY;
         double tmax = INFINITY;
@@ -113,7 +111,6 @@ public:
     virtual bool intersectBounding(const Ray& ray) const{return intersectAABB(ray, minBound, maxBound);}
     virtual void getWorldAABB(Vector3D& min, Vector3D& max) const {min = minBound;max = maxBound;}
     virtual int getTriangleCount() const { return 0; }
-
     virtual void setTexture(std::shared_ptr<Texture> tex)
     {
         texture = tex;

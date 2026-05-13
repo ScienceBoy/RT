@@ -21,8 +21,9 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
             std::atomic<int>& linesDone, std::atomic<bool>& stopRendering)
 {
     VolumeResult vol;
-    int HaltonSamples = 16; // 16 Berechnungen pro Pixel gegen Antialiasing. Dafür musst ich clamp() ausschalten
-    if (!antialiasing) HaltonSamples = 1;
+    int HaltonSamples = antialiasingSamples; // 16 Berechnungen pro Pixel gegen Antialiasing. Dafür musst ich clamp() ausschalten
+    if (!antialiasing) 
+        HaltonSamples = 1;
 
     for (int x = xStart; x < xEnd; x++)
         f.pixel(x, yStart, Farbe(1,0,0)), f.pixel(x, yEnd-1, Farbe(1,0,0));
@@ -32,14 +33,8 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
 
     for (int y = yStart; y < yEnd; y++)
     {
-        
-        if (stopRendering.load())
-            return;
-
-
         for (int x = xStart; x < xEnd; x++)
         {
-            
             if (stopRendering.load())
                 return;
 
@@ -47,20 +42,22 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
 
             for (int s = 0; s < HaltonSamples; s++) 
             {
-                double hx = Halton(s, 2);
-                double hy = Halton(s, 3);
+                double sx = x;
+                double sy = y;
 
-                // Subpixel offset
-                double sx = x + hx - 0.5;
-                double sy = y + hy - 0.5;
+                if (antialiasing)
+                {
+                    sx = x + Halton(s, 2) - 0.5;                // inkl. Subpixel offset;
+                    sy = y + Halton(s, 3) - 0.5;                // inkl. Subpixel offset
+                }
 
                 //Ray r(Vector3D(x,y,0), Vector3D(0,0,1));    // sende Ray Parallel-projektion
                 //Ray r = cam[0].makeRay(x, y, f);
                 Ray r = cam[0].makeRay(sx, sy, f);
                 Hit h = ClosestPointOfIntersection(r);      // Prüfen auf Treffen von Objekten
 
-                if(h.hit)                             // object hit ?
-                {
+                //if(h.hit)                             // object hit ?
+                //{
                     //Farbe farbe = flatShading(h.farbe, h.normale, h.punkt); // Nur Flat Shading
                     //Farbe farbe = flatShadingAndshadow(h.farbe, h.normale, h.punkt);  // Flat Shading mit Schatten
                     //farbe = farbe * (1.0 - h.t/(2*sceneMax.z));    // Depth Cueing
@@ -71,22 +68,27 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
                     if (nebelVorhanden) farbe = nebel(h, farbe);
                     if (rauchVorhanden) farbe = rauch(r, farbe);
                     if (wolkeVolumeVorhanden) farbe = wolke(r, farbe);
-                }
-                else
+                //}
+                /*else
                 {
                     //background = Texture::backgroundCalc("sky", r.direction.y);
-                    farbe = farbe + Texture::backgroundCalc("sky", r.direction);
+                    farbe = Texture::backgroundCalc("sky", r.direction);
                     if (nebelVorhanden) background = nebel(h, background);
                     if (rauchVorhanden) background = rauch(r, background);
                     if (wolkeVolumeVorhanden) background = wolke(r, background);
                     //f.pixel(x,y, background);
-                }
+                }*/
 
             }
             
-            farbe = farbe * (1.0 / HaltonSamples);
+            if (antialiasing) 
+                farbe = farbe * (1.0 / HaltonSamples);
 
-            f.pixel(x,y, farbe);
+            Farbe finalColor = toneMapping(farbe, exposure);
+            finalColor = linearToSRGB(finalColor);
+            //finalColor.clamp();
+
+            f.pixel(x,y, finalColor);
 
         }
         
@@ -115,7 +117,7 @@ Farbe nebel(Hit h, Farbe farbe)
 // =======================================================
 // Fügt Rauchfarbe entlang eines Rays zur bestehenden Farbe hinzu
 // =======================================================
-Farbe rauch(Ray ray, Farbe farbe)
+/*Farbe rauch(Ray ray, Farbe farbe)
 {
     double t_entry, t_exit;   // Eintritts- und Austrittspunkt des Rays in die Rauchbox
 
@@ -127,6 +129,34 @@ Farbe rauch(Ray ray, Farbe farbe)
 
         // Rauchfarbe zur bisherigen Farbe addieren
         farbe += smoke;
+    }
+
+    // Endfarbe zurückgeben
+    return farbe;
+}*/
+
+Farbe rauch(Ray ray, Farbe farbe)
+{
+    for (const auto& box : smokeBoxes)
+    {
+        double t_entry, t_exit; // Eintritts- und Austrittspunkt des Rays in die Rauchbox
+
+        // Prüfen, ob der Ray die Rauchbox schneidet
+        if (intersectSmokeBox(ray, box, t_entry, t_exit))
+        {
+            // Volumetrische Integration innerhalb der Box
+            Farbe smoke = rauchInBox(
+                ray,
+                t_entry,
+                t_exit,
+                box,
+                box.color,
+                box.densityMultiplier);
+
+            // Rauchfarbe zur bisherigen Farbe addieren
+            //std::cout << smoke.b << smoke.g << smoke.b << std::endl;
+            farbe += smoke;
+        }
     }
 
     // Endfarbe zurückgeben
@@ -157,11 +187,11 @@ Farbe wolke(Ray ray, Farbe farbe)
 // =======================================================
 // Raymarching durch das Rauchvolumen
 // =======================================================
-Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor)
+//Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor)
+Farbe rauchInBox(Ray ray, double t_entry, double t_exit, const SmokeBox& box, Farbe smokeColor, double densityMultiplier)
 {
-
     // Schrittweite: feste Anzahl von Samples im Volumen
-    double stepSize = (t_exit - t_entry) / 64.0;
+    double stepSize = (t_exit - t_entry) / 256.0;
     double t = t_entry;
 
     Farbe color = Farbe(0,0,0);     // aufsummierte Streufarbe
@@ -173,15 +203,25 @@ Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor)
         // Aktuelle Sample-Position im Raum
         Vector3D pos = ray.origin + t * ray.direction;
 
+        /*Vector3D size = box.max - box.min;
+        Vector3D localPos(
+            (pos.x - box.min.x) / size.x,
+            (pos.y - box.min.y) / size.y,
+            (pos.z - box.min.z) / size.z
+        );*/
+        
         // ---------------------------
         // Verzerrung der Abtastposition
         // ---------------------------
+        double seed = box.seed;
         Vector3D p = pos;
-        p.x += noise(Vector3D(0, p.y * 0.5, 0)) * 0.2;
-        p.z += noise(Vector3D(0, p.y * 0.5, 1)) * 0.2;
+        //Vector3D p = localPos;
+        p.x += noise(Vector3D(seed, p.y * 0.5, 0)) * 0.2;
+        p.z += noise(Vector3D(seed, p.y * 0.5, 1)) * 0.2;
 
         // Rauchdichte an dieser Position sampeln
-        double density = sampleDensityOfSmoke(p);
+        //double density = sampleDensityOfSmoke(p);
+        double density = sampleDensityOfSmoke(box, p) * densityMultiplier;
 
         // Nur relevante Dichten berücksichtigen
         if (density > 0.0001)
@@ -199,25 +239,26 @@ Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor)
             // ---------------------------
             // Schatten innerhalb des Rauchs
             // ---------------------------
-            double light = computeShadowOfSmoke(pos, L);
+            double light = computeShadowOfSmoke(box, pos, L);
             light = 0.2 + 0.8 * light;   // Minimum an Umgebungslicht
 
             // ---------------------------
             // Phase Function (anisotrope Streuung)
             // ---------------------------
             double cosTheta = L * V;
-            double phase = phaseHG(cosTheta, 0.6) * 10.0;
+            double phase = phaseHG(cosTheta, 0.6) * 4.0;
 
             // ---------------------------
             // Streulicht-Beitrag
             // ---------------------------
             color += smokeColor
                    * transmittance
-                   * density
+                   * density //
                    * light
                    * phase
                    * stepSize
-                   * 10;
+                   * 1.0
+                   ;
         }
 
         // Frühzeitiger Abbruch bei fast vollständiger Absorption
@@ -320,7 +361,7 @@ double phaseHG(double cosTheta, double g)
 // =======================================================
 // Ray–AABB-Schnitt mit der Rauchbox
 // =======================================================
-bool intersectSmokeBox(const Ray& ray, double& tmin, double& tmax)
+/*bool intersectSmokeBox(const Ray& ray, double& tmin, double& tmax)
 {
     const double eps = 1e-8;
 
@@ -335,18 +376,63 @@ bool intersectSmokeBox(const Ray& ray, double& tmin, double& tmax)
                     safeInv(ray.direction.z));
 
     // Schnittintervalle für jede Achse
-    double tx1 = (RauchboxMin.x - ray.origin.x) * invDir.x;
-    double tx2 = (RauchboxMax.x - ray.origin.x) * invDir.x;
+    double tx1 = (box.min.x - ray.origin.x) * invDir.x;
+    double tx2 = (box.max.x - ray.origin.x) * invDir.x;
 
-    double ty1 = (RauchboxMin.y - ray.origin.y) * invDir.y;
-    double ty2 = (RauchboxMax.y - ray.origin.y) * invDir.y;
+    double ty1 = (box.min.y - ray.origin.y) * invDir.y;
+    double ty2 = (box.max.y - ray.origin.y) * invDir.y;
 
-    double tz1 = (RauchboxMin.z - ray.origin.z) * invDir.z;
-    double tz2 = (RauchboxMax.z - ray.origin.z) * invDir.z;
+    double tz1 = (box.min.z - ray.origin.z) * invDir.z;
+    double tz2 = (box.max.z - ray.origin.z) * invDir.z;
 
     // Gemeinsames Eintritts- und Austrittsintervall
     tmin = std::max(std::max(std::min(tx1, tx2), std::min(ty1, ty2)), std::min(tz1, tz2));
     tmax = std::min(std::min(std::max(tx1, tx2), std::max(ty1, ty2)), std::max(tz1, tz2));
+
+    // Box liegt vollständig hinter dem Ray
+    if (tmax < 0.0)
+        return false;
+
+    // Fall: Startpunkt liegt bereits in der Box
+    tmin = std::max(tmin, 0.0);
+
+    return tmax > tmin;
+}
+*/
+
+bool intersectSmokeBox(const Ray& ray, const SmokeBox& box, double& tmin, double& tmax)
+{
+    const double eps = 1e-8;
+
+    // Sichere Invertierung der Richtungsvektoren
+    auto safeInv = [&](double d)
+    {
+        return (fabs(d) > eps) ? 1.0 / d : 1e8;
+    };
+
+    Vector3D invDir(
+        safeInv(ray.direction.x),
+        safeInv(ray.direction.y),
+        safeInv(ray.direction.z));
+
+    // Schnittintervalle für jede Achse
+    double tx1 = (box.min.x - ray.origin.x) * invDir.x;
+    double tx2 = (box.max.x - ray.origin.x) * invDir.x;
+
+    double ty1 = (box.min.y - ray.origin.y) * invDir.y;
+    double ty2 = (box.max.y - ray.origin.y) * invDir.y;
+
+    double tz1 = (box.min.z - ray.origin.z) * invDir.z;
+    double tz2 = (box.max.z - ray.origin.z) * invDir.z;
+
+    // Gemeinsames Eintritts- und Austrittsintervall
+    tmin = std::max(
+        std::max(std::min(tx1, tx2), std::min(ty1, ty2)),
+        std::min(tz1, tz2));
+
+    tmax = std::min(
+        std::min(std::max(tx1, tx2), std::max(ty1, ty2)),
+        std::max(tz1, tz2));
 
     // Box liegt vollständig hinter dem Ray
     if (tmax < 0.0)
@@ -402,22 +488,35 @@ bool intersectCloudBox(const Ray& ray, double& tmin, double& tmax)
 // =======================================================
 // Berechnet Rauch-Schatten entlang eines Lichtstrahls
 // =======================================================
-double computeShadowOfSmoke(Vector3D pos, Vector3D lightDir)
+double computeShadowOfSmoke(const SmokeBox& box, Vector3D pos, Vector3D lightDir)
 {
-    double t = 0.0;
-    double maxDist = 10.0;
+    Ray lightRay(pos, lightDir);
+
+    double tmin, tmax;
+
+    if (!intersectSmokeBox(lightRay, box, tmin, tmax))
+    {
+        return 1.0;
+    }
+
+    double t = tmin;
+
     double transmittance = 1.0;
+
     double stepSize = 0.2;
 
-    while (t < maxDist)
+    while (t < tmax)
     {
-        Vector3D samplePos = pos + t * lightDir;
+        Vector3D samplePos =
+            pos + t * lightDir;
 
-        // Rauchdichte entlang des Lichtstrahls
-        double density = sampleDensityOfSmoke(samplePos);
+        double density =
+            sampleDensityOfSmoke(
+                box,
+                samplePos);
 
-        // weichere (volumetrische) Abschattung
-        transmittance *= exp(-density * stepSize * 1.5);
+        transmittance *=
+            exp(-density * stepSize * 1.5);
 
         if (transmittance < 0.01)
             break;
@@ -425,7 +524,6 @@ double computeShadowOfSmoke(Vector3D pos, Vector3D lightDir)
         t += stepSize;
     }
 
-    // konstantes Ambient-Light mischen
     return 0.2 + 0.8 * transmittance;
 }
 
@@ -471,14 +569,15 @@ double computeShadowOfCloud(Vector3D pos, Vector3D lightDir)
 // =======================================================
 // Rauchdichte-Funktion (Form + Struktur + Animation)
 // =======================================================
-double sampleDensityOfSmoke(Vector3D p)
+//double sampleDensityOfSmoke(Vector3D p)
+double sampleDensityOfSmoke(const SmokeBox& box, Vector3D p)
 {
     // Mittelpunkt der Rauchbox
-    double cx = (RauchboxMin.x + RauchboxMax.x) * 0.5;
-    double cz = (RauchboxMin.z + RauchboxMax.z) * 0.5;
+    double cx = (box.min.x + box.max.x) * 0.5;
+    double cz = (box.min.z + box.max.z) * 0.5;
 
     // Normalisierte Höhe in der Box
-    double h = clamp((p.y - RauchboxMin.y) / (RauchboxMax.y - RauchboxMin.y), 0.0, 1.0);
+    double h = clamp((p.y - box.min.y) / (box.max.y - box.min.y), 0.0, 1.0);
 
     // ---------------------------
     // Zeit für Animation
@@ -889,13 +988,12 @@ Hit ClosestPointOfIntersection(const Ray& ray)
 Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
 {
     if(depth <= 0)
-        return Texture::backgroundCalc("sky", ray.direction.y);
+        return Farbe(0,0,0);
 
     Hit h = ClosestPointOfIntersection(ray);
+
     if(!h.hit)
-    {
-        return Texture::backgroundCalc("sky", ray.direction.y);
-    }
+        return Texture::backgroundCalc("sky", ray.direction);
 
     Vector3D N = h.normale.normalized();
     Vector3D V = -ray.direction.normalized();
@@ -963,11 +1061,11 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
 
     if(hasIOR && kt > 0.0)
     {
-        Vector3D Tdir = refract(ray.direction, N, n1, n2);
+        Vector3D Tdir = refract(ray.direction, h.geomNormale, n1, n2);
 
         if(Tdir.length() > 0)
         {
-            Vector3D offset = (Tdir * N < 0) ? -N : N;
+            Vector3D offset = (Tdir * h.geomNormale < 0) ? -h.geomNormale : h.geomNormale;
             Ray refractRay(h.position + offset * 1e-4, Tdir);
 
             Hit exitHit = ClosestPointOfIntersection(refractRay);

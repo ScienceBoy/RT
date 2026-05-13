@@ -61,9 +61,13 @@ MaterialType SceneLoader::stringToMaterialType(const std::string& s)
 {
     if (s == "mirror") return MaterialType::Mirror;
     if (s == "gold") return MaterialType::Gold;
-    if (s == "glass") return MaterialType::Glass;
+    if (s == "earth") return MaterialType::Earth;    
     if (s == "bluePlastic") return MaterialType::BluePlastic;
+    if (s == "glass") return MaterialType::Glass;
     if (s == "greenGlass") return MaterialType::GreenGlass;
+    if (s == "wall") return MaterialType::Wall;
+    if (s == "simple") return MaterialType::Simple;        
+    if (s == "wasser") return MaterialType::Wasser;    
 
     return MaterialType::BluePlastic;
     //throw std::runtime_error("Unknown material: " + s);

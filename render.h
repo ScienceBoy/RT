@@ -3,6 +3,8 @@
 #include "ray.h"
 #include "hit.h"
 #include "fenster.h"
+#include "smokeBox.h"
+#include "smokeBox.h"
 #include <atomic>
 
 Hit ClosestPointOfIntersection(const Ray& ray);
@@ -71,13 +73,16 @@ double fbm(const Vector3D &p);
 
 Farbe rauch(Ray ray, Farbe farbe);
 
-Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor);
+//Farbe rauchInBox(Ray ray, double t_entry, double t_exit, Farbe smokeColor);
+Farbe rauchInBox(Ray ray, double t_entry, double t_exit, const SmokeBox& box, Farbe smokeColor, double densityMultiplier);
 
-bool intersectSmokeBox(const Ray &ray, double &tmin, double &tmax);
+//bool intersectSmokeBox(const Ray &ray, double &tmin, double &tmax);
+bool intersectSmokeBox(const Ray &ray, const SmokeBox &box, double &tmin, double &tmax);
 
-double computeShadowOfSmoke(Vector3D pos, Vector3D lightDir);
+double computeShadowOfSmoke(const SmokeBox& box, Vector3D pos, Vector3D lightDir);
 
-double sampleDensityOfSmoke(Vector3D p);
+//double sampleDensityOfSmoke(Vector3D p);
+double sampleDensityOfSmoke(const SmokeBox &box, Vector3D p);
 
 double phaseHG(double cosTheta, double g);
 
@@ -96,3 +101,4 @@ bool intersectCloudBox(const Ray &ray, double &tmin, double &tmax);
 void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int octaves);
 
 double Halton(int index, int base);
+

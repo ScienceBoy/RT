@@ -20,6 +20,20 @@ const Material MaterialLibrary::MIRROR = Material(
     1.0, 0.0, 0.0
 );
 
+const Material MaterialLibrary::EARTH = Material(
+    Farbe(0.02,0.02,0.02),   // ambient
+    Farbe(0.3,0.5,0.9),   // diffuse
+    Farbe(0.2,0.2,0.2),   // specular
+
+    0.2,    // kA
+    0.9,    // kD
+    32,    // kS (shininess)
+
+    0.0f,    // reflection
+    0.0f,     // IndexOfRefraction
+    0.0f      // transparency
+);
+
 const Material MaterialLibrary::GOLD = Material(
     Farbe(0,0,0),
     Farbe(0,0,0),
@@ -37,8 +51,8 @@ const Material MaterialLibrary::BLUE_PLASTIC = Material(
 );
 
 const Material MaterialLibrary::GLASS = Material(
-    Farbe(0,0,0),
-    Farbe(0,0,0),
+    Farbe(1,1,1),
+    Farbe(1,1,1),
     Farbe(1,1,1),
     0.0, 0.0, 100.0,
     0.0, 1.5, 1.0,
@@ -47,11 +61,11 @@ const Material MaterialLibrary::GLASS = Material(
 
 const Material MaterialLibrary::GREEN_GLASS = Material(
     Farbe(0,0,0),
-    Farbe(0,0,0),
     Farbe(1,1,1),
+    Farbe(0,0,0),
     0.0, 0.0, 100.0,
     0.0, 1.5, 1.0,
-    Farbe(0.8, 0.1, 0.8)
+    Farbe(0.3, 0.0, 0.3)
 );
 
 const Material MaterialLibrary::WASSER = Material(
@@ -93,6 +107,7 @@ Material MaterialLibrary::get(MaterialType type)
     {
         case MaterialType::Mirror:      return MIRROR;
         case MaterialType::Gold:        return GOLD;
+        case MaterialType::Earth:       return EARTH;        
         case MaterialType::BluePlastic: return BLUE_PLASTIC;
         case MaterialType::Glass:       return GLASS;
         case MaterialType::GreenGlass:  return GREEN_GLASS;

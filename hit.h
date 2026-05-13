@@ -15,7 +15,7 @@ struct Hit
 
     Farbe farbe;       // Farbe des Objekts
     Vector3D position;
-    Vector3D normale;
+    Vector3D normale, geomNormale;  // normale kann für interpolierte Normalen eingesetzt werden. Refraktion braucht immer geomNormale
     const object* obj = nullptr; // welches object
     const Material* material;
     bool frontFace;
