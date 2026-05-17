@@ -8,17 +8,17 @@
     </camera>
 
     <lights>
-        <light>
+        <light type="point">
             <position x="224" y="94" z="380"/>
             <color r="1" g="1" b="1"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="200" y="500" z="300"/>
             <color r="0.8" g="0.8" b="0.8"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="250" y="552" z="416"/>
             <color r="1" g="1" b="0.2"/>
         </light>
@@ -45,7 +45,7 @@
             <position x="240" y="426" z="392"/>
         </SPHERE>
 
-        <mesh material="bluePlastic" file="N:/RayTracing/FS26/SW08/Glas.obj"  texture="8081_earthmap10k.bmp" textureMode="SPHERE"/>
+        <!-- <mesh material="bluePlastic" file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Glas.obj"  texture="8081_earthmap10k.bmp" textureMode="SPHERE"/> -->
 
     </objects>
 

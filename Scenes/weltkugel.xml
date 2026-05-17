@@ -8,17 +8,17 @@
     </camera>
 
     <lights>
-        <light>
+        <light type="point">
             <position x="400" y="50" z="100"/>
             <color r="1" g="1" b="1"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="200" y="500" z="300"/>
             <color r="0.8" g="0.8" b="0.8"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="50" y="50" z="-50"/>
             <color r="1" g="1" b="0.2"/>
         </light>
@@ -41,8 +41,8 @@
 
     <objects>
 
-        <SPHERE material="8081_earthmap10k.bmp" radius="80" texture="0x1f154688f90" textureMode="PLANAR">
-            <position x="240" y="420" z="400"/>
+        <SPHERE material="bluePlastic" radius="80" texture="8081_earthmap10k.bmp" textureMode="SPHERE">
+            <position x="240" y="426" z="392"/>
         </SPHERE>
 
         <mesh material=""/>

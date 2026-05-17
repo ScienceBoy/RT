@@ -8,12 +8,27 @@
     </camera>
 
     <lights>
-        <light>
-            <position x="40" y="178" z="-16"/>
+        <!--<light type="point" power="50">
+            <position x="40" y="250" z="100"/>
             <color r="1" g="1" b="1"/>
         </light>
+        <light type="directional">
+            <position x="40" y="250" z="100"/>
+            <color r="1" g="1" b="1"/>
+        </light>
+        <light type="area" power="10000">
+            <position x="40" y="50" z="60"/>
 
-    </lights>
+            <edgeU x="10" y="0" z="-10"/>
+            <edgeV x="10" y="0" z="10"/>
+
+            <color r="0" g="1" b="0"/>
+        </light>-->
+        <light type="sphere" power="500000">
+            <center x="40" y="25" z="10"/>
+            <radius value="5"/>
+            <color r="1" g="1" b="0"/>
+        </light>
 
     <materials>
         <material id="bluePlastic"/>
@@ -57,7 +72,7 @@
             <p x="70" y="80" z="20"/>
         </wall>-->
 
-        <mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/Siedlung.obj"/>
+        <mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Siedlung.obj"/>
 
     </objects>
 

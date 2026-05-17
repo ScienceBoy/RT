@@ -9,17 +9,17 @@
 
     <!-- ================= LIGHTS ================= -->
     <lights>
-        <light>
+        <light type="point">
             <position x="400" y="50" z="100"/>
             <color r="1" g="1" b="1"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="200" y="500" z="300"/>
             <color r="0.8" g="0.8" b="0.8"/>
         </light>
 
-        <light>
+        <light type="point">
             <position x="50" y="50" z="-50"/>
             <color r="1" g="1" b="0.2"/>
         </light>
@@ -131,7 +131,7 @@
         </cylinder>-->
 
         <!-- OBJ -->
-        //<mesh material="bluePlastic" file="N:/RayTracing/FS26/SW08/Glas.obj"/>
+        //<mesh material="bluePlastic" file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Glas.obj"/>
 
     </objects>
 
