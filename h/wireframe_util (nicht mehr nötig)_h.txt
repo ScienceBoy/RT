@@ -1,0 +1,6 @@
+#ifndef WIREFRAME_UTIL_H
+#define WIREFRAME_UTIL_H
+
+void showWireframe();
+
+#endif

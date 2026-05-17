@@ -1,0 +1,1 @@
+void place2x2(Fenster& f, int row, int col, const wchar_t* title);

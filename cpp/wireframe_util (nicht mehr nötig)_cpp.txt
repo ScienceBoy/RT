@@ -1,0 +1,14 @@
+#include "wireframe_util.h"
+#include "wireframe.h"
+#include "scene.h"
+#include <thread>
+
+void showWireframe()
+{
+    std::thread({
+        Fenster win(800, 600);
+        Wireframe wf(win);
+        wf.setScene(scene);
+        wf.run();
+    }).detach();
+}
