@@ -1,0 +1,23 @@
+# Blender 5.1.1 MTL File: 'None'
+# www.blender.org
+
+newmtl Gluebirne
+
+Ns 0.0
+
+Ka 0.8 0.8 0.8
+Kd 0.8 0.8 0.8
+
+# keine Spiegelung
+Ks 0.0 0.0 0.0
+
+Ke 0.0 0.0 0.0
+
+# KEINE Refraktion
+Ni 1.0
+
+# transparent (0 = unsichtbar, 1 = solide)
+d 0.0
+Tr 1.0
+
+illum 1
