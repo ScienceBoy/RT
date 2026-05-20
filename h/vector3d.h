@@ -1,5 +1,8 @@
 #pragma once
 #include <cmath>
+#include <iostream>
+#include <ostream>
+
 
 class Vector3D {
 public:
@@ -45,5 +48,5 @@ public:
     Vector3D minVec(const Vector3D & a, const Vector3D & b);
     Vector3D maxVec(const Vector3D & a, const Vector3D & b);
 
+    friend std::ostream &operator<<(std::ostream &os, const Vector3D &vec);
 };
-

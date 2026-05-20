@@ -175,6 +175,10 @@ void Mesh::translate(const Vector3D& delta)
 
     position += delta;
 
+    minBound += delta;
+    maxBound += delta;
+    boundingCenter += delta;
+
     this->buildBVH();
 }
 

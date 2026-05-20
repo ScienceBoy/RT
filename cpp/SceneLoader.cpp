@@ -19,6 +19,9 @@
 #include "sphereLight.h"
 #include "areaLight.h"
 #include "pointlight.h"
+#include "mesh.h"
+#include <meshLight.h>
+#include <memory>
 
 extern std::vector<std::unique_ptr<object>> scene;
 //extern std::vector<light> lights;
@@ -86,6 +89,17 @@ std::string SceneLoader::loadFile(const std::string& path)
     return buffer.str();
 }
 
+void scaleMesh(Mesh& mesh, double scale)
+{
+    for (auto& tri : mesh.triangles)
+    {
+        tri.a *= scale;
+        tri.b *= scale;
+        tri.c *= scale;
+    }
+}
+
+
 void SceneLoader::loadSceneFromXML(const std::string& path, Fenster& f)
 {
     std::string xml = loadFile(path);
@@ -146,8 +160,8 @@ void SceneLoader::loadSceneFromXML(const std::string& path, Fenster& f)
     }
 
     // === LIGHTS ===
-for(auto& l : lightsNode->children)
-{
+    for(auto& l : lightsNode->children)
+    {
     std::string type =
         l->attr["type"];
     
@@ -292,6 +306,124 @@ for(auto& l : lightsNode->children)
                     power
                 )
             );
+        }
+        else if (type == "mesh")
+        {
+            double power = 50.0;
+
+            if (l->attr.count("power"))
+                power = std::stod(l->attr["power"]);
+
+            /*Farbe color(1, 1, 1);
+
+            auto colIt = l->attr.find("color");
+
+            if (!l->children.empty())
+            {
+                auto c = l->children[0].get();
+                color = Farbe(
+                    std::stod(c->attr["r"]),
+                    std::stod(c->attr["g"]),
+                    std::stod(c->attr["b"])
+                );
+            }
+
+            std::vector<Dreieck> triangles;
+            auto mesh = std::make_unique<Mesh>(Material());
+            auto meshNode = findNode(l.get(), "mesh");
+
+            if (!meshNode)
+                throw std::runtime_error("Mesh light missing <mesh> node");
+
+            for (auto& triNode : meshNode->children)
+            {
+                auto a = triNode->children[0].get();
+                auto b = triNode->children[1].get();
+                auto c = triNode->children[2].get();
+
+                Dreieck t;
+                t.a = Vector3D(std::stod(a->attr["x"]),
+                            std::stod(a->attr["y"]),
+                            std::stod(a->attr["z"]));
+
+                t.b = Vector3D(std::stod(b->attr["x"]),
+                            std::stod(b->attr["y"]),
+                            std::stod(b->attr["z"]));
+
+                t.c = Vector3D(std::stod(c->attr["x"]),
+                            std::stod(c->attr["y"]),
+                            std::stod(c->attr["z"]));
+
+                //triangles.push_back(t);
+                mesh->triangles.push_back(t);
+            }
+
+            // --- Bounding Box ---
+            if (!mesh->triangles.empty()) {
+                mesh->minBound = mesh->triangles[0].minBound;
+                mesh->maxBound = mesh->triangles[0].maxBound;
+
+                for (const auto& t : mesh->triangles) {
+                    mesh->minBound.x = std::min(mesh->minBound.x, t.minBound.x);
+                    mesh->minBound.y = std::min(mesh->minBound.y, t.minBound.y);
+                    mesh->minBound.z = std::min(mesh->minBound.z, t.minBound.z);
+
+                    mesh->maxBound.x = std::max(mesh->maxBound.x, t.maxBound.x);
+                    mesh->maxBound.y = std::max(mesh->maxBound.y, t.maxBound.y);
+                    mesh->maxBound.z = std::max(mesh->maxBound.z, t.maxBound.z);
+                }
+
+                mesh->boundingCenter = 0.5 * (mesh->minBound + mesh->maxBound);
+                mesh->boundingRadius = (mesh->maxBound - mesh->boundingCenter).length();
+            }
+
+            mesh->buildBVH();
+
+            lights.emplace_back(
+                std::make_unique<MeshLight>(
+                    std::move(mesh),
+                    color,
+                    power
+                )
+            );*/
+
+            auto& o = lightsNode->children[0];
+            std::string type = o->name;
+
+            Material mat;
+            auto matIt = materialMap.find(o->attr["material"]);
+            if (matIt == materialMap.end())
+            {
+                Farbe color;
+                if (!o->children.empty())
+                {
+                    auto c = o->children[0].get();
+                    color = Farbe(
+                        std::stod(c->attr["r"]),
+                        std::stod(c->attr["g"]),
+                        std::stod(c->attr["b"])
+                    );
+                }
+                mat = makeMaterialSimple(color);
+            }
+            else
+                mat = matIt->second;
+
+            std::string file = o->children[1]->attr["file"];
+            auto mesh = MeshImporter::importOBJ_fast(file, mat);
+            mesh->materialName = file;
+
+            applyTexture(mesh, o);
+
+            lights.emplace_back(
+                std::make_unique<MeshLight>(
+                    std::move(mesh),
+                    mat.emission,
+                    power
+                )
+            );
+        
+
         }
     }
 

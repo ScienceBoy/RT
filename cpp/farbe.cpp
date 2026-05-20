@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <windows.h>
 
+
 // Konstruktoren
 Farbe::Farbe() : r(0), g(0), b(0) {}
 Farbe::Farbe(double r_, double g_, double b_) : r(r_), g(g_), b(b_) { clamp(); }
@@ -37,6 +38,15 @@ Farbe& Farbe::operator*=(const Farbe& c) {
     clamp();
     return *this;
 }
+
+std::ostream& operator<<(std::ostream& os, const Farbe& vec) {
+    os << "("
+       << vec.r << ", "
+       << vec.g << ", "
+       << vec.b << ")";
+    return os;
+}
+
 
 // Werte auf 0-1 beschränken
 void Farbe::clamp() {

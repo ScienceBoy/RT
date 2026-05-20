@@ -4,6 +4,7 @@
 #include "material_library.h"
 #include <unordered_map>
 #include "TextureManager.h"
+#include "mesh.h"
 
 class Fenster;
 struct XMLNode;
@@ -22,5 +23,4 @@ public:
     static TextureMode parseTextureMode(const std::string& m);
 };
 
-
-
+void scaleMesh(Mesh &mesh, double scale);

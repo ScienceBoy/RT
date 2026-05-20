@@ -51,25 +51,34 @@ BVHNode::BVHNode(object* l, object* r)
 
 bool BVHNode::intersectAABB(const Ray& ray, double tMax) const
 {
-    double tmin = ( (ray.sign[0] ? maxBound.x : minBound.x) - ray.origin.x ) * ray.invDirection.x;
-    double tmax = ( (ray.sign[0] ? minBound.x : maxBound.x) - ray.origin.x ) * ray.invDirection.x;
+    double tmin = (minBound.x - ray.origin.x) * ray.invDirection.x;
+    double tmax = (maxBound.x - ray.origin.x) * ray.invDirection.x;
 
-    double tymin = ( (ray.sign[1] ? maxBound.y : minBound.y) - ray.origin.y ) * ray.invDirection.y;
-    double tymax = ( (ray.sign[1] ? minBound.y : maxBound.y) - ray.origin.y ) * ray.invDirection.y;
+    if (ray.invDirection.x < 0) std::swap(tmin, tmax);
 
-    if ( (tmin > tymax) || (tymin > tmax) )
+    double tymin = (minBound.y - ray.origin.y) * ray.invDirection.y;
+    double tymax = (maxBound.y - ray.origin.y) * ray.invDirection.y;
+
+    if (ray.invDirection.y < 0) std::swap(tymin, tymax);
+
+    if ((tmin > tymax) || (tymin > tmax))
         return false;
 
     if (tymin > tmin) tmin = tymin;
     if (tymax < tmax) tmax = tymax;
 
-    double tzmin = ( (ray.sign[2] ? maxBound.z : minBound.z) - ray.origin.z ) * ray.invDirection.z;
-    double tzmax = ( (ray.sign[2] ? minBound.z : maxBound.z) - ray.origin.z ) * ray.invDirection.z;
+    double tzmin = (minBound.z - ray.origin.z) * ray.invDirection.z;
+    double tzmax = (maxBound.z - ray.origin.z) * ray.invDirection.z;
 
-    if ( (tmin > tzmax) || (tzmin > tmax) )
+    if (ray.invDirection.z < 0) std::swap(tzmin, tzmax);
+
+    if ((tmin > tzmax) || (tzmin > tmax))
         return false;
 
-    return true;
+    if (tzmin > tmin) tmin = tzmin;
+    if (tzmax < tmax) tmax = tzmax;
+
+    return tmin <= tMax && tmax >= 0;
 }
 
 // Traversal

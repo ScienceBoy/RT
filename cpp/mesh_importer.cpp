@@ -12,6 +12,9 @@
 #include "scene.h"
 #include <filesystem>
 #include <future>
+#include <string>
+
+
 
 std::string currentMatName;
 
@@ -60,6 +63,18 @@ inline void trimRange(const char*& start, const char*& end) {
 inline int fixIndex(int idx, int size) {
     return (idx < 0) ? size + idx : idx - 1;
 }
+
+static float extractValue(const std::string& line, const std::string& key)
+{
+    size_t pos = line.find(key + "=\"");
+    if (pos == std::string::npos) return 0.0f;
+
+    pos += key.length() + 2;
+    size_t end = line.find("\"", pos);
+
+    return std::stof(line.substr(pos, end - pos));
+}
+
 
 // --- MTL Loader ---
 std::map<std::string, MaterialInfo> loadMTL(const std::string& filename) 

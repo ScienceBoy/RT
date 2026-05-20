@@ -31,6 +31,14 @@ Vector3D Vector3D::cross(const Vector3D& v) const {
     );
 }
 
+std::ostream& operator<<(std::ostream& os, const Vector3D& vec) {
+    os << "("
+       << vec.x << ", "
+       << vec.y << ", "
+       << vec.z << ")";
+    return os;
+}
+
 // length / Länge
 double Vector3D::length() const { return std::sqrt(x*x + y*y + z*z); }
 double Vector3D::lengthSquared() const { return x*x + y*y + z*z; }

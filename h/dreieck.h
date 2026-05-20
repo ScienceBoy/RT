@@ -33,4 +33,5 @@ public:
     virtual void getWorldAABB(Vector3D& min, Vector3D& max) const;
 
     int getTriangleCount() const override { return 1; }
+    double area() const;
 };

@@ -1001,6 +1001,7 @@ Farbe blinnPhong(
             // =========================
             // Lighting Contribution
             // =========================
+            //std::cout << mat_diffuse << " " << Li << " " << mat.kD << " " << diff << std::endl;
             Farbe diffuse =
                 mat_diffuse *
                 Li *
@@ -1047,6 +1048,8 @@ Farbe blinnPhong(
 Hit ClosestPointOfIntersection(const Ray& ray)
 {
     Hit best;
+    best.t = std::numeric_limits<double>::infinity();
+    best.hit = false;
 
     for(const auto& obj : scene)
         obj->intersect(ray, best);

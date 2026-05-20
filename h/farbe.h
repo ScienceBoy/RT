@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <ostream>
 
 class Farbe {
 public:
@@ -22,6 +24,7 @@ public:
 
     // Umwandlung in Windows COLORREF (0-255)
     unsigned int toCOLORREF() const;
+    friend std::ostream &operator<<(std::ostream &os, const Farbe &vec);
 };
 
 Farbe sRGBtoLinear(const Farbe &sRGBColor);

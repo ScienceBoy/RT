@@ -25,3 +25,5 @@ int parseInt(const char *&p);
 void trimRange(const char *&start, const char *&end);
 
 int fixIndex(int idx, int size);
+
+static float extractValue(const std::string &line, const std::string &key);

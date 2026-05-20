@@ -115,6 +115,7 @@ void initMeshLoaded(Fenster& f)
     scene.push_back(MeshImporter::importOBJ_fast("N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Ebenen als Szenenbegrenzung mit Kugel.mtl", makeMaterialSimple(Farbe(1.0,0.0,0.0))));
 }
 
+
 void initCam(Fenster& f)
 {
     //cam = Camera(Vector3D(f.breite()/2,f.hoehe()/2,-250.0), Vector3D(f.breite()/2,f.hoehe()/2,1.0), 90.0, 16.0/9.0);

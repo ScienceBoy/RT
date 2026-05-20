@@ -208,9 +208,9 @@ void Dreieck::drawFlat(Wireframe& wf, DrawMode mode) const
 
     wf.fillTriangle(x0,y0,z0, x1,y1,z1, x2,y2,z2, matHere);
 
-    wf.drawLine(x0,y0,z0, x1,y1,z1, matHere);
+    /*wf.drawLine(x0,y0,z0, x1,y1,z1, matHere);
     wf.drawLine(x1,y1,z1, x2,y2,z2, matHere);
-    wf.drawLine(x2,y2,z2, x0,y0,z0, matHere);
+    wf.drawLine(x2,y2,z2, x0,y0,z0, matHere);*/
 }
 
 // Wireframe
@@ -245,4 +245,10 @@ void Dreieck::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     wf.project(C, x0, y0, z0);
     wf.project(A, x1, y1, z1);
     wf.drawLine(x0, y0, z0, x1, y1, z1, matHere);
+}
+
+double Dreieck::area() const
+{
+    return 0.5 *
+        (edge1.cross(edge2)).length();
 }
