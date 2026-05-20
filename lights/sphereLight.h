@@ -21,7 +21,7 @@ public:
 
     // ===== Rendering =====
 
-    Vector3D samplePoint() const override;
+    LightSample samplePoint() const override;
 
     Vector3D directionFrom(
         const Vector3D& point) const override;

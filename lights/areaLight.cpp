@@ -23,20 +23,34 @@ AreaLight::AreaLight(
     power = 50.0;
 }
 
-Vector3D AreaLight::samplePoint() const
+LightSample AreaLight::samplePoint() const
 {
     double su = random01();
     double sv = random01();
 
-    return position
-        + edgeU * su
-        + edgeV * sv;
+    Vector3D p =
+        position + edgeU * su + edgeV * sv;
+
+    Vector3D n =
+        edgeU.cross(edgeV).normalized();
+
+    double area = edgeU.cross(edgeV).length();
+    double pdf = 1.0 / area;
+
+    return {
+        p,
+        n,
+        Vector3D(),   // directionToLight (wird später im Shading gesetzt)
+        0.0,          // distance (ebenfalls später)
+        farbe,       // radiance
+        pdf
+    };
 }
 
-Vector3D AreaLight::directionFrom(
-    const Vector3D& point) const
+Vector3D AreaLight::directionFrom(const Vector3D& point) const
 {
-    Vector3D p = samplePoint();
+    LightSample s = samplePoint();
+    Vector3D p = s.position;
 
     return (p - point).normalized();
 }
@@ -44,14 +58,16 @@ Vector3D AreaLight::directionFrom(
 double AreaLight::distanceFrom(
     const Vector3D& point) const
 {
-    Vector3D p = samplePoint();
+    LightSample s = samplePoint();
+    Vector3D p = s.position;
     return (p - point).length();
 }
 
 Farbe AreaLight::intensityAt(const Vector3D& point) const
 {
     // Sample auf Fläche
-    Vector3D p = samplePoint();
+    LightSample s = samplePoint();
+    Vector3D p = s.position;
 
     Vector3D dir = p - point;
     double d = dir.length();
@@ -124,9 +140,7 @@ void AreaLight::drawWireframePixels(
     drawEdge(p3,p0);
 }
 
-void AreaLight::intersect(
-    const Ray& ray,
-    Hit& hit) const
+void AreaLight::intersect(const Ray& ray, Hit& hit) const
 {
     Vector3D normal =
         (edgeU.cross(edgeV)).normalized();
@@ -137,9 +151,7 @@ void AreaLight::intersect(
     if(std::abs(denom) < 1e-6)
         return;
 
-    double t =
-        ((position - ray.origin) * normal)
-        / denom;
+    double t = ((position - ray.origin) * normal) / denom;
 
     if(t < 1e-6)
         return;
@@ -284,11 +296,7 @@ int AreaLight::numberOfSamples(const Vector3D& hitPos) const
     double dist2 = (position - hitPos).lengthSquared();
 
     //std::cout << std::clamp(int(area * 300.0 / dist2), 8, 128) << std::endl;
-    return std::clamp(
-        int(area * 300.0 / dist2),
-        8,
-        128
-    );
+    return std::clamp(int(area * 300.0 / dist2), 8, 128);
 }
 
 Farbe AreaLight::getEmission() const

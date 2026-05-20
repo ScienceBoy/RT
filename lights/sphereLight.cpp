@@ -19,12 +19,24 @@ SphereLight::SphereLight(
     power = power;
 }
 
-Vector3D SphereLight::samplePoint() const
+LightSample SphereLight::samplePoint() const
 {
     Vector3D dir = randomUnitVector();
-    lastSamplePoint = center + dir * radius;
-    hasSample = true;
-    return lastSamplePoint;
+    Vector3D p = center + dir * radius;
+
+    Vector3D n = dir.normalized();
+
+    double area = 4.0 * 3.14159265 * radius * radius;
+    double pdf = 1.0 / area;
+
+    return {
+        p,
+        n,
+        Vector3D(),   // directionToLight später
+        0.0,          // distance später
+        farbe,
+        pdf
+    };
 }
 
 Vector3D SphereLight::directionFrom(const Vector3D& point) const
@@ -227,9 +239,8 @@ void SphereLight::translate(const Vector3D& delta)
 
 LightSample SphereLight::sample(const Vector3D& p) const
 {
-    LightSample s;
-
-    Vector3D samplePos = samplePoint(); 
+    LightSample s = samplePoint();
+    Vector3D samplePos = s.position;
 
     Vector3D dir = samplePos - p;
     double d = dir.length();

@@ -23,12 +23,72 @@
             <edgeV x="10" y="0" z="10"/>
 
             <color r="0" g="1" b="0"/>
-        </light>-->
+        </light>
         <light type="sphere" power="500000">
             <center x="40" y="25" z="10"/>
             <radius value="5"/>
             <color r="1" g="1" b="0"/>
+        </light>-->
+        <light type="mesh" power="100">
+            <color r="1" g="1" b="0"/>
+            <mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/wuerfel.obj"/>
+
+            <!--<mesh>
+
+            <triangle><a x="0" y="-1" z="0"/><b x="0.2" y="-0.8" z="0"/><c x="0" y="-0.8" z="0.2"/></triangle>
+            <triangle><a x="0" y="-1" z="0"/><b x="0" y="-0.8" z="0.2"/><c x="-0.2" y="-0.8" z="0"/></triangle>
+            <triangle><a x="0" y="-1" z="0"/><b x="-0.2" y="-0.8" z="0"/><c x="0" y="-0.8" z="-0.2"/></triangle>
+            <triangle><a x="0" y="-1" z="0"/><b x="0" y="-0.8" z="-0.2"/><c x="0.2" y="-0.8" z="0"/></triangle>
+            <triangle><a x="0.2" y="-0.8" z="0"/><b x="0.4" y="-0.5" z="0"/><c x="0.3" y="-0.5" z="0.3"/></triangle>
+            <triangle><a x="0.2" y="-0.8" z="0"/><b x="0.3" y="-0.5" z="0.3"/><c x="0" y="-0.8" z="0.2"/></triangle>
+            <triangle><a x="0" y="-0.8" z="0.2"/><b x="0.3" y="-0.5" z="0.3"/><c x="0" y="-0.5" z="0.4"/></triangle>
+            <triangle><a x="0" y="-0.8" z="0.2"/><b x="0" y="-0.5" z="0.4"/><c x="-0.3" y="-0.5" z="0.3"/></triangle>
+            <triangle><a x="0" y="-0.8" z="0.2"/><b x="-0.3" y="-0.5" z="0.3"/><c x="-0.2" y="-0.8" z="0"/></triangle>
+            <triangle><a x="-0.2" y="-0.8" z="0"/><b x="-0.3" y="-0.5" z="0.3"/><c x="-0.4" y="-0.5" z="0"/></triangle>
+            <triangle><a x="-0.2" y="-0.8" z="0"/><c x="-0.3" y="-0.5" z="-0.3"/><b x="-0.4" y="-0.5" z="0"/></triangle>
+            <triangle><a x="-0.2" y="-0.8" z="0"/><b x="-0.3" y="-0.5" z="-0.3"/><c x="0" y="-0.8" z="-0.2"/></triangle>
+            <triangle><a x="0" y="-0.8" z="-0.2"/><b x="-0.3" y="-0.5" z="-0.3"/><c x="0" y="-0.5" z="-0.4"/></triangle>
+            <triangle><a x="0" y="-0.8" z="-0.2"/><b x="0" y="-0.5" z="-0.4"/><c x="0.3" y="-0.5" z="-0.3"/></triangle>
+            <triangle><a x="0" y="-0.8" z="-0.2"/><b x="0.3" y="-0.5" z="-0.3"/><c x="0.2" y="-0.8" z="0"/></triangle>
+            <triangle><a x="0.2" y="-0.8" z="0"/><c x="0.4" y="-0.5" z="0"/><b x="0.3" y="-0.5" z="-0.3"/></triangle>
+            <triangle><a x="0.4" y="-0.5" z="0"/><b x="0.5" y="0" z="0"/><c x="0.4" y="0" z="0.4"/></triangle>
+            <triangle><a x="0.4" y="-0.5" z="0"/><b x="0.4" y="0" z="0.4"/><c x="0.3" y="-0.5" z="0.3"/></triangle>
+            <triangle><a x="0.3" y="-0.5" z="0.3"/><b x="0.4" y="0" z="0.4"/><c x="0" y="0" z="0.5"/></triangle>
+            <triangle><a x="0.3" y="-0.5" z="0.3"/><b x="0" y="0" z="0.5"/><c x="0" y="-0.5" z="0.4"/></triangle>
+            <triangle><a x="0" y="-0.5" z="0.4"/><b x="0" y="0" z="0.5"/><c x="-0.4" y="0" z="0.4"/></triangle>
+            <triangle><a x="0" y="-0.5" z="0.4"/><b x="-0.4" y="0" z="0.4"/><c x="-0.3" y="-0.5" z="0.3"/></triangle>
+            <triangle><a x="-0.3" y="-0.5" z="0.3"/><b x="-0.4" y="0" z="0.4"/><c x="-0.5" y="0" z="0"/></triangle>
+            <triangle><a x="-0.3" y="-0.5" z="0.3"/><b x="-0.5" y="0" z="0"/><c x="-0.4" y="-0.5" z="0"/></triangle>
+            <triangle><a x="-0.4" y="-0.5" z="0"/><c x="-0.4" y="0" z="-0.4"/><b x="-0.5" y="0" z="0"/></triangle>
+            <triangle><a x="-0.4" y="-0.5" z="0"/><b x="-0.4" y="0" z="-0.4"/><c x="-0.3" y="-0.5" z="-0.3"/></triangle>
+            <triangle><a x="-0.3" y="-0.5" z="-0.3"/><b x="-0.4" y="0" z="-0.4"/><c x="0" y="0" z="-0.5"/></triangle>
+            <triangle><a x="-0.3" y="-0.5" z="-0.3"/><b x="0" y="0" z="-0.5"/><c x="0" y="-0.5" z="-0.4"/></triangle>
+            <triangle><a x="0" y="-0.5" z="-0.4"/><b x="0" y="0" z="-0.5"/><c x="0.4" y="0" z="-0.4"/></triangle>
+            <triangle><a x="0" y="-0.5" z="-0.4"/><b x="0.4" y="0" z="-0.4"/><c x="0.3" y="-0.5" z="-0.3"/></triangle>
+            <triangle><a x="0.3" y="-0.5" z="-0.3"/><b x="0.4" y="0" z="-0.4"/><c x="0.5" y="0" z="0"/></triangle>
+            <triangle><a x="0.3" y="-0.5" z="-0.3"/><c x="0.4" y="-0.5" z="0"/><b x="0.5" y="0" z="0"/></triangle>
+            <triangle><a x="0.5" y="0" z="0"/><b x="0.4" y="0.5" z="0"/><c x="0.3" y="0.5" z="0.3"/></triangle>
+            <triangle><a x="0.5" y="0" z="0"/><b x="0.3" y="0.5" z="0.3"/><c x="0.4" y="0" z="0.4"/></triangle>
+            <triangle><a x="0.4" y="0.5" z="0"/><b x="0" y="1" z="0"/><c x="0.3" y="0.5" z="0.3"/></triangle>
+            <triangle><a x="0.3" y="0.5" z="0.3"/><b x="0" y="1" z="0"/><c x="0" y="0.5" z="0.4"/></triangle>
+            <triangle><a x="0" y="0.5" z="0.4"/><b x="0" y="1" z="0"/><c x="-0.3" y="0.5" z="0.3"/></triangle>
+            <triangle><a x="-0.3" y="0.5" z="0.3"/><b x="0" y="1" z="0"/><c x="-0.4" y="0.5" z="0"/></triangle>
+            <triangle><a x="-0.4" y="0.5" z="0"/><b x="0" y="1" z="0"/><c x="-0.3" y="0.5" z="-0.3"/></triangle>
+            <triangle><a x="-0.3" y="0.5" z="-0.3"/><b x="0" y="1" z="0"/><c x="0" y="0.5" z="-0.4"/></triangle>
+            <triangle><a x="0" y="0.5" z="-0.4"/><b x="0" y="1" z="0"/><c x="0.3" y="0.5" z="-0.3"/></triangle>
+            <triangle><a x="0.3" y="0.5" z="-0.3"/><b x="0" y="1" z="0"/><c x="0.4" y="0.5" z="0"/></triangle>
+            <triangle><a x="0.4" y="0" z="0.4"/><b x="0.3" y="0.5" z="0.3"/><c x="0" y="0.5" z="0.4"/></triangle>
+            <triangle><a x="0" y="0" z="0.5"/><b x="0" y="0.5" z="0.4"/><c x="-0.3" y="0.5" z="0.3"/></triangle>
+            <triangle><a x="-0.4" y="0" z="0.4"/><b x="-0.3" y="0.5" z="0.3"/><c x="-0.4" y="0.5" z="0"/></triangle>
+            <triangle><a x="-0.5" y="0" z="0"/><b x="-0.4" y="0.5" z="0"/><c x="-0.3" y="0.5" z="-0.3"/></triangle>
+            <triangle><a x="-0.4" y="0" z="-0.4"/><b x="-0.3" y="0.5" z="-0.3"/><c x="0" y="0.5" z="-0.4"/></triangle>
+            <triangle><a x="0" y="0" z="-0.5"/><b x="0" y="0.5" z="-0.4"/><c x="0.3" y="0.5" z="-0.3"/></triangle>
+            <triangle><a x="0.4" y="0" z="-0.4"/><b x="0.3" y="0.5" z="-0.3"/><c x="0.4" y="0.5" z="0"/></triangle>
+            <triangle><a x="0.5" y="0" z="0"/><b x="0.4" y="0.5" z="0"/><c x="0.3" y="0.5" z="0.3"/></triangle>
+            </mesh>-->
+
         </light>
+    </lights>
 
     <materials>
         <material id="bluePlastic"/>
@@ -73,6 +133,7 @@
         </wall>-->
 
         <mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Siedlung.obj"/>
+        <!--<mesh file="N:/RayTracing/FS26/Neu2026 (minimalistisch)/OBJ-Files/Gluehbirne.obj"/>-->
 
     </objects>
 

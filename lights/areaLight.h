@@ -6,7 +6,6 @@
 class AreaLight : public light
 {
 public:
-
     Vector3D position;
     double power = 50.0;  // Gesamtleistung (Watt)
 
@@ -23,7 +22,7 @@ public:
 
     // ===== Rendering =====
 
-    Vector3D samplePoint() const override;
+    LightSample samplePoint() const override;
 
     Vector3D directionFrom(
         const Vector3D& point) const override;

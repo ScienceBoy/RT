@@ -15,9 +15,16 @@ DirectionalLight::DirectionalLight(
     irradiance = 1.0;
 }
 
-Vector3D DirectionalLight::samplePoint() const
+LightSample DirectionalLight::samplePoint() const
 {
-    return Vector3D(0,0,0);
+    return {
+        Vector3D(0,0,0),
+        Vector3D(0,0,0),
+        Vector3D(0,0,0),
+        0.0,
+        farbe,
+        1.0
+    };
 }
 
 Vector3D DirectionalLight::directionFrom(

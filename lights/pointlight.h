@@ -15,7 +15,7 @@ public:
         const Farbe& col,
         double power);
 
-    Vector3D samplePoint() const override;
+    LightSample samplePoint() const override;
 
     Vector3D directionFrom(
         const Vector3D& p) const override;

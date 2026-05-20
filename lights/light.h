@@ -28,7 +28,7 @@ public:
 
     virtual LightSample sample(const Vector3D& p) const = 0;
 
-    virtual Vector3D samplePoint() const = 0;
+    virtual LightSample samplePoint() const = 0;
 
     virtual Vector3D directionFrom(const Vector3D& p) const = 0;
 

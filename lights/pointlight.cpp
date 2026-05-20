@@ -19,9 +19,16 @@ PointLight::PointLight(
     power = 100000.0;
 }
 
-Vector3D PointLight::samplePoint() const
+LightSample PointLight::samplePoint() const
 {
-    return position;
+    return {
+        position,
+        Vector3D(0,0,0),
+        Vector3D(0,0,0),
+        0.0,
+        farbe,
+        1.0
+    };
 }
 
 Vector3D PointLight::directionFrom(
