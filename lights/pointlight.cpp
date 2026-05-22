@@ -16,7 +16,7 @@ PointLight::PointLight(
 {
     position = pos;
     farbe = col;
-    power = 100000.0;
+    power = 1000.0;
 }
 
 LightSample PointLight::samplePoint() const
@@ -89,7 +89,7 @@ void PointLight::drawFlat(Wireframe& wf, DrawMode mode) const
 void PointLight::drawWireframePixels(Wireframe& wf, DrawMode mode) const
 {
     const int steps = 32;
-    const double radius = 10.0;
+    const double radius = 1.0;
 
     int x0,y0,x1,y1;
     double z0,z1;
@@ -187,7 +187,7 @@ void PointLight::drawWireframePixels(Wireframe& wf, DrawMode mode) const
 
 void PointLight::intersect(const Ray& ray, Hit& hit) const
 {
-    double radius = 10.0;
+    double radius = 0.1;
 
     Vector3D v = ray.origin - position;
     double a = ray.direction * ray.direction;
