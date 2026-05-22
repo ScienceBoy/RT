@@ -15,6 +15,11 @@ Dreieck::Dreieck()
         normale = edge1.cross(edge2).normalized();  
         geomNormale = normale;
 
+        hasVertexNormals =
+        nA.lengthSquared() > 0.0f &&
+        nB.lengthSquared() > 0.0f &&
+        nC.lengthSquared() > 0.0f;
+
         // Bounding Box (LOKAL!)
         minBound = Vector3D(
             std::min({a.x, b.x, c.x}),
@@ -52,6 +57,11 @@ Dreieck::Dreieck(const Vector3D& A, const Vector3D& B, const Vector3D& C, const 
         edge2 = c - a;
         normale = edge1.cross(edge2).normalized();
         geomNormale = normale;
+
+        hasVertexNormals =
+        nA.lengthSquared() > 0.0f &&
+        nB.lengthSquared() > 0.0f &&
+        nC.lengthSquared() > 0.0f;
 
         // Bounding Box (LOKAL!)
         minBound = Vector3D(
@@ -137,16 +147,29 @@ void Dreieck::intersect(const Ray& ray, Hit& hit) const
         //hit.normale = N;
 
         // Interpolierte Shading-Normale
-        Vector3D smoothN =
-            (alpha * nA +
-            beta  * nB +
-            gamma * nC).normalized();
+        Vector3D shadingNormal;
 
-        // Frontface-Test mit GEOMETRISCHER Normale
+        if (hasVertexNormals)
+        {
+            shadingNormal =
+                (alpha * nA +
+                beta  * nB +
+                gamma * nC);
+
+            shadingNormal = shadingNormal.normalized();
+        }
+        else
+        {
+            shadingNormal = geomNormale;
+        }
+
+        // Frontface-Test immer mit geometrischer Normale
         hit.frontFace = (geomNormale * ray.direction < 0);
 
-        // Normale ggf. umdrehen 
-        hit.normale = hit.frontFace ? smoothN : smoothN * -1;
+        // Normale ggf. drehen
+        hit.normale = hit.frontFace
+            ? shadingNormal
+            : shadingNormal * -1;
 
         //hit.u = u;
         //hit.v = v;

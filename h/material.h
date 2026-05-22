@@ -3,15 +3,15 @@
 
 class Material {
 public:
-    Farbe ambient;
-    Farbe diffuse;
-    Farbe specular;
-    Farbe emission;
+    Farbe ambient;    // Ambient Farbe
+    Farbe diffuse;    // Diffuse Farbe
+    Farbe specular;   // Specular Farbe
+    Farbe emission;   // Emission
 
     double kA;        // Ambient-Faktor
     double kD;        // Diffuse-Faktor
     //double kS;        // Shininess / Specular exponent
-    double shininess; 
+    double shininess;   // Shininess
     double specularStrength; 
     double roughness; 
 

@@ -24,6 +24,9 @@
 #include <iostream>
 #include "TextureManager.h"
 #include "pointLight.h"
+#include "tree.h"
+#include "bvh.h"
+#include "BVHNode.h"
 
 // Definition der globalen Variablen
 std::vector<std::unique_ptr<object>> scene;
@@ -82,7 +85,7 @@ bool terrainVorhanden = false;
 bool wasserVorhanden = false;
 
 bool antialiasing = false;
-int antialiasingSamples = 9; // 1 = no antialiasiing   16 = good antialiasing
+int antialiasingSamples = 9; // 1 = no antialiasing   16 = good antialiasing
 
 //Camera cam(Vector3D(0.5,0.5,-250), Vector3D(0.5,0.5,1.0), 90.0, 16.0/9.0);
 
@@ -102,12 +105,13 @@ void initScene(Fenster& f)
     //initMeshLoaded(f);
     //addCoordinateSystem();
     //addSphere(Vector3D(0.0,0.0,0.0), 63710000, MaterialType::Earth);
-    addSphere(Vector3D(0.0,3.0,0.0), 80, MaterialType::BluePlastic);
-
+    //addSphere(Vector3D(0.0,3.0,0.0), 80, MaterialType::BluePlastic);
     SceneLoader::loadSceneFromXML("N:/RayTracing/FS26/Neu2026 (minimalistisch)/scenes/Siedlung.xml", f);
+    addBaum(Vector3D(-3.5,-1.0,-3.5),Vector3D(0.2,1.0,0.2),5.0, 1.0, 7, 0.9);
     if (wolkeKugelnVorhanden) addWolkenAusKugeln(1, 10, 50);
     if (terrainVorhanden) addTerrain(512, (GroundMax.x - GroundMin.x) / 4.0, 3, 6);
     if (wasserVorhanden) addWasser(512, GroundMax.x - GroundMin.x, 4, 3);
+
     computeSceneBounds();
 }
 void initMeshLoaded(Fenster& f)
@@ -120,6 +124,20 @@ void initCam(Fenster& f)
 {
     //cam = Camera(Vector3D(f.breite()/2,f.hoehe()/2,-250.0), Vector3D(f.breite()/2,f.hoehe()/2,1.0), 90.0, 16.0/9.0);
     cam.push_back(Camera(Vector3D(f.breite()/2,f.hoehe()/2,-400.0), Vector3D(f.breite()/2,f.hoehe()/2,1.0), 120.0, 16.0/9.0));
+}
+
+void addBaum(Vector3D pos, Vector3D richtung, double laenge, double radiusHolz, int tiefe, double wkeitWeiteresGlied)
+{
+    scene.push_back(
+    std::make_unique<Tree>(
+        pos,
+        richtung,
+        laenge,
+        radiusHolz,
+        tiefe,
+        wkeitWeiteresGlied
+    )
+);
 }
 
 void addTerrain(int gridResolution, int sizeXZ, int heightScale, int octaves)

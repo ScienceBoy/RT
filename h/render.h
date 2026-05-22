@@ -102,3 +102,6 @@ void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int 
 
 double Halton(int index, int base);
 
+Vector3D randomHemisphereDirection(const Vector3D &N);
+
+Vector3D cosineSampleHemisphere(const Vector3D &N);

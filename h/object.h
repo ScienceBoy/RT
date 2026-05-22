@@ -115,10 +115,13 @@ public:
     {
         texture = tex;
     }
-
     virtual void setTextureMode(TextureMode mode)
     {
         textureMode = mode;
+    }
+    virtual void collectPrimitives(std::vector<object*>& out)
+    {
+        out.push_back(this);
     }
 };
 

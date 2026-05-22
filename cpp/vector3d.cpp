@@ -3,10 +3,11 @@
 // Konstruktoren
 Vector3D::Vector3D() : x(0), y(0), z(0) {}
 Vector3D::Vector3D(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {}
-
+Vector3D::Vector3D(const Vector3D& other) : x(other.x), y(other.y), z(other.z) {}
 // Operatoren
 Vector3D Vector3D::operator+(const Vector3D& v) const { return Vector3D(x+v.x, y+v.y, z+v.z); }
 Vector3D Vector3D::operator-(const Vector3D& v) const { return Vector3D(x-v.x, y-v.y, z-v.z); }
+Vector3D& Vector3D::operator=(const Vector3D& other) {x = other.x; y = other.y; z = other.z; return *this;}
 Vector3D Vector3D::operator*(double scalar) const { return Vector3D(x*scalar, y*scalar, z*scalar); }
 
 Vector3D& Vector3D::operator+=(const Vector3D& v) { x+=v.x; y+=v.y; z+=v.z; return *this; }

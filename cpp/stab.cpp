@@ -23,7 +23,7 @@ Stab::Stab(const Vector3D& a, const Vector3D& b, double r, const Material& mat)
 
     boundingCenter = position;
 
-    // AABB (auch lokal!)
+    // AABB
     minBound = Vector3D(
         std::min(p1.x, p2.x) - radius,
         std::min(p1.y, p2.y) - radius,
@@ -57,11 +57,15 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
     double ca_dot_d  = ca * d;
     double ca_dot_oc = ca * oc;
     double ca_dot_ca = ca * ca;
+    if (ca_dot_ca < 1e-12)
+        return;
 
     Vector3D x = d * ca_dot_ca - ca * ca_dot_d;
     Vector3D y = oc * ca_dot_ca - ca * ca_dot_oc;
 
     double a = x * x;
+    if (std::abs(a) < 1e-12)
+        return;
     double b = 2 * (x * y);
     double c = (y * y) - radius*radius * ca_dot_ca * ca_dot_ca;
 
@@ -69,11 +73,20 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
     if (disc < 0) return;
 
     double sqrtD = sqrt(disc);
-    double t = (-b - sqrtD) / (2*a);
-    if (t < 1e-6)
-        t = (-b + sqrtD) / (2*a);
+    double t0 = (-b - sqrtD) / (2*a);
+    double t1 = (-b + sqrtD) / (2*a);
 
-    if (t < 1e-6 || t >= hit.t) return;
+    // sortieren
+    if (t0 > t1) std::swap(t0, t1);
+
+    // gültiges t wählen
+    double t = t0;
+
+    if (t < 1e-4)
+        t = t1;
+
+    if (t >= hit.t)
+        return;
 
     // Schnittpunkt
     Vector3D p = ray.origin + d * t;
@@ -88,7 +101,7 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
     hit.obj = this;
     hit.material = &mat;
     hit.hitObject = true;    
-    hit.position = p;  // jetzt korrekt in Weltkoordinaten
+    hit.position = p;  
 
     // Normale berechnen
     Vector3D axisPoint = localP1 + ca * h;

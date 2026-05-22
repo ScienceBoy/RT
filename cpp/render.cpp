@@ -23,16 +23,18 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
             std::atomic<int>& linesDone, std::atomic<bool>& stopRendering)
 {
     VolumeResult vol;
-    int HaltonSamples = antialiasingSamples; // 16 Berechnungen pro Pixel gegen Antialiasing. Dafür musst ich clamp() ausschalten
+    int HaltonSamples = antialiasingSamples; // 16 Berechnungen pro Pixel gegen Antialiasing. Dafür musste ich clamp() ausschalten
     if (!antialiasing) 
         HaltonSamples = 1;
 
+    // Aktueller Berechnungsbereich rot umranden
     for (int x = xStart; x < xEnd; x++)
         f.pixel(x, yStart, Farbe(1,0,0)), f.pixel(x, yEnd-1, Farbe(1,0,0));
 
     for (int y = yStart; y < yEnd; y++)
         f.pixel(xStart, y, Farbe(1,0,0)), f.pixel(xEnd-1, y, Farbe(1,0,0));
 
+    // Rendering
     for (int y = yStart; y < yEnd; y++)
     {
         for (int x = xStart; x < xEnd; x++)
@@ -945,8 +947,8 @@ Farbe blinnPhong(
 
     Farbe result(0,0,0);
 
-    // Ambient
-    result += mat.ambient * mat.kA;
+    // Ambient (braucht es nicht mehr, da ich PathTracing und damit Global Illumination eingebaut habe)
+    //result += mat.ambient * mat.kA;
 
     // =========================
     // Texture
@@ -1002,21 +1004,23 @@ Farbe blinnPhong(
             // Lighting Contribution
             // =========================
             //std::cout << mat_diffuse << " " << Li << " " << mat.kD << " " << diff << std::endl;
-            Farbe diffuse =
+            Farbe diffuse = 
                 mat_diffuse *
                 Li *
                 mat.kD *
                 diff;
 
             
-            Farbe specular =
+            Farbe specular = 
                 mat.specular *
                 mat.specularStrength *
                 Li *
                 spec;
 
-
-            lightSum += diffuse + specular;
+            if (mat.reflection == 0.0)
+                lightSum += diffuse + specular;
+            else
+                lightSum += diffuse;
         }
 
         result += lightSum * (1.0 / lightSamples);
@@ -1110,6 +1114,7 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     if (hasIOR)
     {
         Rf = fresnel(ray.direction, N, n1, n2);
+        Rf = clamp(Rf, 0.0, 1.0);
     }
     else
     {
@@ -1203,6 +1208,24 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
                 + reflectColor * kr
                 + refractColor * ktw;
 
+    // Path Tracing eingebauet (vorerst nur für diffuse Materialien)
+    Farbe indirect(0,0,0);
+    if(kd > 0.001)
+    {
+        Vector3D bounceDir = cosineSampleHemisphere(N);
+        Ray bounceRay(h.position + N*1e-4, bounceDir);
+        double cosTheta = std::max(0.0, bounceDir * N);
+        Farbe incoming = trace(bounceRay, depth-1, current_ior);
+        Farbe brdf = h.material->diffuse * (1.0 / 3.14159265);
+        double pdf = cosTheta / 3.14159265;
+        indirect =
+            incoming *
+            brdf *
+            cosTheta * (1.0 / pdf);
+    }
+
+    result += indirect * kd;
+
     return result;
 }
 
@@ -1252,4 +1275,48 @@ double Halton(int index, int base)
     }
 
     return result;
+}
+
+Vector3D randomHemisphereDirection(const Vector3D& N)
+{
+    Vector3D dir;
+
+    do
+    {
+        dir = randomUnitVector();
+    }
+    while(dir * N <= 0);
+
+    return dir.normalized();
+}
+
+Vector3D cosineSampleHemisphere(const Vector3D& N)
+{
+    double r1 = randomDouble(0,1);
+    double r2 = randomDouble(0,1);
+
+    double phi = 2.0 * 3.14159265 * r1;
+
+    double x = cos(phi) * sqrt(r2);
+    double y = sin(phi) * sqrt(r2);
+    double z = sqrt(1.0 - r2);
+
+    // Tangent Space erzeugen
+    Vector3D up =
+        fabs(N.z) < 0.999
+        ? Vector3D(0,0,1)
+        : Vector3D(1,0,0);
+
+    Vector3D tangent =
+        (up.cross(N)).normalized();
+
+    Vector3D bitangent =
+        N.cross(tangent);
+
+    // Local -> World
+    return (
+        tangent * x +
+        bitangent * y +
+        N * z
+    ).normalized();
 }

@@ -84,3 +84,5 @@ void addWolkenAusKugeln(int Anzahl, int Tiefe, int Groesse);
 void addTerrain(int gridResolution, int sizeXZ, int heightScale, int octaves);
 
 void addWasser(int gridResolution, int sizeXZ, int heightScale, int octaves);
+
+void addBaum(Vector3D pos, Vector3D richtung, double laenge, double radius, int tiefe, double wkeitWeiteresGlied);

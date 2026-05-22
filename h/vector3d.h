@@ -11,10 +11,12 @@ public:
     // Konstruktoren
     Vector3D();
     Vector3D(double x_, double y_, double z_);
+    Vector3D(const Vector3D& other);
 
     // Operatoren
     Vector3D operator+(const Vector3D& v) const;
     Vector3D operator-(const Vector3D& v) const;
+    Vector3D& operator=(const Vector3D& other);
     Vector3D operator*(double scalar) const;
 
     Vector3D& operator+=(const Vector3D& v);

@@ -26,6 +26,12 @@ enum class SelectedType {
     LOOKAT
 };
 
+enum class SelectedAction {
+    MOVE,
+    SCALE,
+    ROTATE
+};
+
 struct PickResult
 {
     SelectedType type = SelectedType::NONE;
@@ -37,6 +43,11 @@ struct PickResult
 extern double scale;
 extern bool rendernRunning;
 extern bool useFlat;
+extern SelectedType selectedType;
+extern SelectedAction selectedAction;
+extern object* selectedObject;
+extern light*  selectedLight;
+extern Camera* selectedCamera;
 
 class Wireframe {
 protected:
@@ -94,15 +105,14 @@ public:
 
     std::vector<PickResult> pickAll(const Ray &ray);
 
-    SelectedType selectedType = SelectedType::NONE;
-    object* selectedObject = nullptr;
-    light*  selectedLight  = nullptr;
-    Camera* selectedCamera = nullptr;
-
     SelectedType hoverType = SelectedType::NONE;
     object* hoverObject = nullptr;
     light* hoverLight = nullptr;
     Camera* hoverCamera = nullptr;
+    //SelectedType selectedType = SelectedType::NONE;
+    //object* selectedObject = nullptr;
+    //light*  selectedLight  = nullptr;
+    Camera* selectedCamera = nullptr;
 
     std::vector<PickResult> lastHits;
     int pickIndex = 0;
@@ -116,10 +126,10 @@ public:
 
     const int DISTANCE_THRESHOLD = 5;
     bool isDragging = false;
+    std::vector<object*> sceneobjects;
 
 protected:
     Fenster& fenster;
-    std::vector<object*> sceneobjects;
 };
 
 #endif

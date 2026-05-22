@@ -3,6 +3,7 @@
 #include "vector3d.h"
 #include "ray.h"
 #include "hit.h"
+#include "material.h"
 
 class Stab : public object
 {
@@ -20,4 +21,12 @@ public:
     void drawWireframePixels(Wireframe& wf, DrawMode mode) const override;
 
     virtual void getWorldAABB(Vector3D& min, Vector3D& max) const;
+
+    const Material& getMaterial() const
+    {
+        return mat;
+    }
+
+    Vector3D getMinBound() const { return minBound; }
+    Vector3D getMaxBound() const { return maxBound; }
 };

@@ -53,7 +53,7 @@ Material makeMaterialSimple(const Farbe &f)
         f,
         0.0,          // reflection
         1.0,          // IOR
-        1.0,          // ✅ transparency (wichtig!)
+        0.0,          // transparency
         Farbe(0,0,0),
 
         0.0,

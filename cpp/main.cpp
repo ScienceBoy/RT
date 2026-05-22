@@ -23,12 +23,18 @@
 #include <algorithm>
 #include <filesystem>
 #include "SceneSaver.h"
+#include "object.h"
 #include <iostream>
 #include "mesh.h"
 
+object* selectedObject = nullptr;
+light* selectedLight = nullptr;
+SelectedType selectedType = SelectedType::NONE;
+SelectedAction selectedAction = SelectedAction::MOVE;
 
 void moveWinRayToSecondMonitor(Fenster& winRay);
 static bool wasPressed = false;
+int selectionIndex = -1;
 
 //std::vector<std::unique_ptr<object>> scene;
 //std::vector<Camera> cam;
@@ -133,7 +139,7 @@ int main()
             return;
         }
         
-        if (key == 'S')
+        if (key == 'X') // Stop rendering
         {
             if (!wasPressed) {
                 wasPressed = true;
@@ -142,20 +148,42 @@ int main()
             else
                 wasPressed = false;
         }
-
-        else if (key == 'R')
+        else if (key == 'C')    // Clear Scene (bevor  neue Szene geladen werden soll)
         {
             if (!wasPressed) {
                 wasPressed = true;
                 stopRenderingThreads();
-                bringToFront(winRay);
-                preprocessing(winRay);
-                std::thread([&winRay]() {startRendering(winRay);}).detach();
+                while (rendernRunning)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                scene.clear();
+
+                wfTop.clearScene();
+                wfFront.clearScene();
+                wfSide.clearScene();
+                wfPersp.clearScene();
+
+                //scene.push_back(std::make_unique<Wand>(Vector3D(0, 0, 0), Vector3D(1000, 0, 0), Vector3D(1000, 10, 1000), Vector3D(0, 10, 1000), makeMaterialSimple(Farbe(0.0,0.0,0.7)))); // blauer Boden
+
+                wfTop.setScene(scene);
+                wfFront.setScene(scene);
+                wfSide.setScene(scene);
+                wfPersp.setScene(scene);
+                //computeSceneBounds();
             }
             else
                 wasPressed = false;            
         }
-        else if (key == 'I')
+        else if (key == 'F')    // Flat / Wireframe
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                useFlat = !useFlat;
+            }
+            else
+                wasPressed = false;  
+        }
+        else if (key == 'I')    // Import Scene
         {
             if (!wasPressed) {
                 wasPressed = true;
@@ -182,7 +210,54 @@ int main()
             else
                 wasPressed = false;            
         }
-        else if (key == 'O') 
+        else if (key == 'M')    // Select "Move"-Action
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                selectedAction = SelectedAction::MOVE;
+            }
+            else
+                wasPressed = false;  
+        }
+        else if (key == 'N')    // Select next object or light
+        {
+            if (!wasPressed)
+            {
+                wasPressed = true;
+
+                int total = wfFront.sceneobjects.size() + lights.size();
+
+                if (total == 0)
+                    return;
+
+                // nächstes Element
+                selectionIndex++;
+                selectionIndex %= total;
+
+                // Alte Auswahl löschen
+                selectedObject = nullptr;
+                selectedLight = nullptr;
+                selectedType = SelectedType::NONE;
+
+                // ---------- OBJECTS ----------
+                if (selectionIndex < wfFront.sceneobjects.size())
+                {
+                    selectedObject = wfFront.sceneobjects[selectionIndex];
+                    selectedType = SelectedType::OBJECT;
+                }
+                // ---------- LIGHTS ----------
+                else
+                {
+                    int lightIndex = selectionIndex - wfFront.sceneobjects.size();
+
+                    selectedLight = lights[lightIndex].get();
+                    selectedType = SelectedType::LIGHT;
+                }
+            }
+            else
+                wasPressed = false;
+        }
+        else if (key == 'O')    // Output image and xml
         {
             if (!wasPressed) {
                 wasPressed = true;
@@ -201,7 +276,7 @@ int main()
             else
                 wasPressed = false;            
         }
-        else if (key == 'Q')
+        else if (key == 'Q')    // Quit
         {
             if (!wasPressed) {
                 wasPressed = true;
@@ -210,33 +285,37 @@ int main()
             else
                 wasPressed = false;            
         }
-        else if (key == 'C')
+        else if (key == 'R')    // Select "Rotate"-Action
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                selectedAction = SelectedAction::ROTATE;
+            }
+            else
+                wasPressed = false;  
+        }        
+        else if (key == 'S')    // Select "Scale"-Action
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                selectedAction = SelectedAction::SCALE;
+            }
+            else
+                wasPressed = false;  
+        }
+        else if (key == 'Y')    // Start rendering
         {
             if (!wasPressed) {
                 wasPressed = true;
                 stopRenderingThreads();
-                while (rendernRunning)
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                scene.clear();
-
-                wfTop.clearScene();
-                wfFront.clearScene();
-                wfSide.clearScene();
-                wfPersp.clearScene();
-
-                //scene.push_back(std::make_unique<Wand>(Vector3D(0, 0, 0), Vector3D(1000, 0, 0), Vector3D(1000, 10, 1000), Vector3D(0, 10, 1000), makeMaterialSimple(Farbe(0.0,0.0,0.7)))); // blauer Boden
-
-                wfTop.setScene(scene);
-                wfFront.setScene(scene);
-                wfSide.setScene(scene);
-                wfPersp.setScene(scene);
-                //computeSceneBounds();
+                bringToFront(winRay);
+                preprocessing(winRay);
+                std::thread([&winRay]() {startRendering(winRay);}).detach();
             }
             else
                 wasPressed = false;            
         }
-        else if (key == 'Z')
+        else if (key == 'Z')    // Set LookAt to center of scene
         {
             if (!wasPressed) {
                 wasPressed = true;
@@ -253,15 +332,42 @@ int main()
             else
                 wasPressed = false;            
         }
-        else if (key == 'F')
+        else if (key == '6')    // "nach rechts" Translation  oder Rotation
         {            
             if (!wasPressed) {
                 wasPressed = true;
-                useFlat = !useFlat;
+                // Action soll "plus" / "mehr" / "nach rechts" sein
             }
             else
                 wasPressed = false;  
-        }
+        }        
+        else if (key == '4')    // "nach links" Translation oder Rotation
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                // Action soll "minus" / "weniger" / "nach links" sein
+            }
+            else
+                wasPressed = false;  
+        }                
+        else if (key == '8')    // "grösser" skalieren
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                // Action soll "grösser" skalieren
+            }
+            else
+                wasPressed = false;  
+        }        
+        else if (key == '2')    // "kleiner" skalieren
+        {            
+            if (!wasPressed) {
+                wasPressed = true;
+                // Action soll "kleiner" skalieren
+            }
+            else
+                wasPressed = false;  
+        }                
         else 
             wfPersp.onKey(key); 
     };

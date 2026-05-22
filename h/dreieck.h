@@ -16,6 +16,8 @@ public:
     Vector3D normale, geomNormale;       // interpolierte und geometrische Normale
     Vector3D nA, nB, nC;    // Vertex-Normalen
     Vector2D uvA, uvB, uvC;
+    bool hasVertexNormals;
+    Vector3D shadingNormal;
 
     // Konstruktoren
     Dreieck();
@@ -34,4 +36,12 @@ public:
 
     int getTriangleCount() const override { return 1; }
     double area() const;
+
+    Vector3D getMinBound() const { return minBound; }
+    Vector3D getMaxBound() const { return maxBound; }
+
+    const Material& getMaterial() const
+    {
+        return mat;
+    }
 };
