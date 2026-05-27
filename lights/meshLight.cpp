@@ -97,7 +97,7 @@ Farbe MeshLight::intensityAt(const Vector3D& point) const
     double areaPDF = 1.0 / totalArea;
 
     double attenuation =
-        (power * cosTheta * totalArea) / (4.0 * 3.14159265 * s.distance * s.distance);
+        (power * cosTheta * totalArea) / (4.0 * M_PI * s.distance * s.distance);
 
     return farbe * attenuation;
 }

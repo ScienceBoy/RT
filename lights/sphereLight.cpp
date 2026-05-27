@@ -26,7 +26,7 @@ LightSample SphereLight::samplePoint() const
 
     Vector3D n = dir.normalized();
 
-    double area = 4.0 * 3.14159265 * radius * radius;
+    double area = 4.0 * M_PI * radius * radius;
     double pdf = 1.0 / area;
 
     return {
@@ -62,7 +62,7 @@ Farbe SphereLight::intensityAt(
         distanceFrom(point);
 
     return farbe *
-           (power / (4.0 * 3.14159265 * d * d));
+           (power / (4.0 * M_PI * d * d));
 }
 
 void SphereLight::drawFlat(
@@ -97,8 +97,8 @@ void SphereLight::drawWireframePixels(
     {
         for(int i=0;i<steps;i++)
         {
-            double a0 = 2.0 * 3.14159265 * i / steps;
-            double a1 = 2.0 * 3.14159265 * (i+1) / steps;
+            double a0 = 2.0 * M_PI * i / steps;
+            double a1 = 2.0 * M_PI * (i+1) / steps;
 
             Vector3D p0, p1;
 
@@ -188,7 +188,7 @@ Vector3D randomUnitVector()
         2.0 * random01() - 1.0;
 
     double a =
-        2.0 * 3.14159265 * random01();
+        2.0 * M_PI * random01();
 
     double r =
         sqrt(1.0 - z*z);
@@ -253,7 +253,7 @@ LightSample SphereLight::sample(const Vector3D& p) const
     // Sphere normal
     s.normal = (samplePos - center).normalized();
 
-    double area = 4.0 * 3.14159265 * radius * radius;
+    double area = 4.0 * M_PI * radius * radius;
     double pdf = 1.0 / area;
 
     // emission per area (korrekt für area light)
@@ -269,7 +269,7 @@ LightSample SphereLight::sample(const Vector3D& p) const
 
 Farbe SphereLight::getEmission() const
 {
-    double area = 4.0 * 3.14159265 * radius * radius;
+    double area = 4.0 * M_PI * radius * radius;
     return farbe * (power / area);
 }
 
@@ -280,7 +280,7 @@ int SphereLight::numberOfSamples(const Vector3D& hitPos) const
     if (dist <= radius) return maxSamples;
 
     double solidAngle =
-        2.0 * 3.14159265 * (1.0 - sqrt(std::max(0.0, 1.0 - (radius*radius)/(dist*dist))));
+        2.0 * M_PI * (1.0 - sqrt(std::max(0.0, 1.0 - (radius*radius)/(dist*dist))));
 
     double scale = 100.0;
     int samples = int(solidAngle * scale);

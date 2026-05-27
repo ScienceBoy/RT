@@ -89,7 +89,7 @@ Farbe AreaLight::intensityAt(const Vector3D& point) const
 
     // physikalisch sauberer Term
     double attenuation =
-        (power * cosTheta * area) / (4.0 * 3.14159265 * d * d);
+        (power * cosTheta * area) / (4.0 * M_PI * d * d);
 
     return farbe * attenuation;
 }
@@ -277,7 +277,7 @@ LightSample AreaLight::sample(const Vector3D& p) const
     // power = Gesamtleistung des Lichts
     double factor =
         (power * cosTheta * area) /
-        (4.0 * 3.14159265 * d * d);
+        (4.0 * M_PI * d * d);
 
     s.radiance = farbe * factor;
 

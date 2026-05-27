@@ -35,8 +35,8 @@ void light::drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL)
     // Kreis XZ
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
         Vector3D p0 = position + Vector3D(radius*cos(a0),0,radius*sin(a0));
         Vector3D p1 = position + Vector3D(radius*cos(a1),0,radius*sin(a1));
         wf.project(p0,x0,y0,z0);
@@ -47,8 +47,8 @@ void light::drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL)
     // Kreis XY
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
         Vector3D p0 = position + Vector3D(radius*cos(a0),radius*sin(a0),0);
         Vector3D p1 = position + Vector3D(radius*cos(a1),radius*sin(a1),0);
         wf.project(p0,x0,y0,z0);
@@ -59,8 +59,8 @@ void light::drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL)
     // Kreis YZ
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
         Vector3D p0 = position + Vector3D(0,radius*cos(a0),radius*sin(a0));
         Vector3D p1 = position + Vector3D(0,radius*cos(a1),radius*sin(a1));
         wf.project(p0,x0,y0,z0);

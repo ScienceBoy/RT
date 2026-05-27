@@ -49,7 +49,7 @@ Farbe PointLight::intensityAt(
     double d = distanceFrom(p);
 
     return farbe *
-           (power / (4.0 * 3.14159265 * d * d));
+           (power / (4.0 * M_PI * d * d));
 }
 
 void PointLight::save(
@@ -111,8 +111,8 @@ void PointLight::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // =========================================================
     for (int i = 0; i < steps; i++)
     {
-        double a0 = 2 * 3.14159265 * i / steps;
-        double a1 = 2 * 3.14159265 * (i+1) / steps;
+        double a0 = 2 * M_PI * i / steps;
+        double a1 = 2 * M_PI * (i+1) / steps;
 
         Vector3D p0 = position + Vector3D(radius*cos(a0), 0, radius*sin(a0));
         Vector3D p1 = position + Vector3D(radius*cos(a1), 0, radius*sin(a1));
@@ -127,8 +127,8 @@ void PointLight::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // =========================================================
     for (int i = 0; i < steps; i++)
     {
-        double a0 = 2 * 3.14159265 * i / steps;
-        double a1 = 2 * 3.14159265 * (i+1) / steps;
+        double a0 = 2 * M_PI * i / steps;
+        double a1 = 2 * M_PI * (i+1) / steps;
 
         Vector3D p0 = position + Vector3D(radius*cos(a0), radius*sin(a0), 0);
         Vector3D p1 = position + Vector3D(radius*cos(a1), radius*sin(a1), 0);
@@ -143,8 +143,8 @@ void PointLight::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // =========================================================
     for (int i = 0; i < steps; i++)
     {
-        double a0 = 2 * 3.14159265 * i / steps;
-        double a1 = 2 * 3.14159265 * (i+1) / steps;
+        double a0 = 2 * M_PI * i / steps;
+        double a1 = 2 * M_PI * (i+1) / steps;
 
         Vector3D p0 = position + Vector3D(0, radius*cos(a0), radius*sin(a0));
         Vector3D p1 = position + Vector3D(0, radius*cos(a1), radius*sin(a1));
@@ -232,7 +232,7 @@ LightSample PointLight::sample(const Vector3D& p) const
     s.distance = d;
     s.normal = dir;
 
-    double attenuation = power / (4.0 * 3.14159265 * d * d);
+    double attenuation = power / (4.0 * M_PI * d * d);
 
     s.radiance = farbe * attenuation;
     s.pdf = 1.0;
