@@ -29,7 +29,9 @@ public:
     }
 
     bool intersectAABB(const Ray& ray, double tMax) const;
-
+    void translate(const Vector3D &delta) override {};
+    void rotate(const Vector3D &delta) override {};
+    void scale(const Vector3D &delta) override {};
     void intersect(const Ray& ray, Hit& hit) const override;
     void drawWireframePixels(Wireframe &wf, DrawMode mode) const override;
     void drawFlat(Wireframe &wf, DrawMode mode) const override;

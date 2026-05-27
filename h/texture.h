@@ -5,6 +5,7 @@
 #include "farbe.h"
 #include "material.h"
 #include "hit.h"
+#include "stats.h"
 
 class Texture {
 public:
@@ -20,7 +21,6 @@ public:
     static Farbe backgroundCalc(std::string type, double t);
     static Farbe backgroundCalc(std::string type, Vector3D dir);
     static Farbe texture(Farbe farbe, Hit hit);
-
 
     int width() const { return m_width; }
     int height() const { return m_height; }

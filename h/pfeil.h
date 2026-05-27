@@ -17,8 +17,9 @@ public:
 
     // Objekte verschiebbar
     void setPosition(const Vector3D& pos);
-
-    // Intersection und Wireframe
+    void translate(const Vector3D &delta) override {};
+    void rotate(const Vector3D &delta) override {};
+    void scale(const Vector3D &delta) override {};
     void intersect(const Ray& ray, Hit& hit) const override;
     void drawFlat(Wireframe &wf, DrawMode mode) const override;
     void drawWireframePixels(Wireframe &wf, DrawMode mode = DrawMode::NORMAL) const override;

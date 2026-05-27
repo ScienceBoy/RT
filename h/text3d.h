@@ -24,7 +24,9 @@ public:
            const Material& mat);
 
     void setPosition(const Vector3D& pos);
-
+    void translate(const Vector3D &delta) override {};
+    void rotate(const Vector3D &delta) override {};
+    void scale(const Vector3D &delta) override {};    
     void drawFlat(Wireframe& wf, DrawMode mode) const;
     void drawWireframePixels(Wireframe& wf, DrawMode mode) const;
 

@@ -52,6 +52,9 @@ extern bool wasserVorhanden;
 extern bool antialiasing;
 extern int antialiasingSamples;
 
+extern int pathSamples;
+extern int renderingDepth;
+
 extern Vector3D sceneMin;
 extern Vector3D sceneMax;
 

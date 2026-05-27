@@ -70,7 +70,7 @@ inline object* buildBVH(std::vector<object*>& objects)
     std::nth_element(objects.begin(), objects.begin() + mid, objects.end(),
         [axis](object* a, object* b)
         {
-/*            Vector3D minA, maxA, minB, maxB;
+/*          Vector3D minA, maxA, minB, maxB;
 
             a->getWorldAABB(minA, maxA);
             b->getWorldAABB(minB, maxB);

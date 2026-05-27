@@ -7,6 +7,9 @@
 #include "material.h"
 #include "bvh.h"
 #include "BVHNode.h"
+#include "stats.h"
+#include <deque>
+
 
 class Tree : public object
 {
@@ -19,6 +22,8 @@ public:
          double wkeitWeiteresGlied);
 
     ~Tree();
+
+    //std::vector<object*> bvhObjects;
 
     void intersect(const Ray& ray, Hit& hit) const override;
     void drawFlat(Wireframe& wf, DrawMode mode) const override;
@@ -46,8 +51,11 @@ private:
 
     Vector3D randomInSphere();
 
-    std::vector<Stab> stabs;       // Baumstruktur
-    std::vector<Dreieck> leaves;   // Blätter
+    //std::vector<Stab> stabs;       // Baumstruktur
+    //std::vector<Dreieck> leaves;   // Blätter
+    //std::vector<Dreieck> woodTriangles; // Baumstruktur aus Dreiecken
+    std::vector<Dreieck> woodTriangles;
+    std::vector<Dreieck> leaves;
 
     Vector3D position;
 
@@ -56,10 +64,16 @@ private:
     double boundingRadius;
     Vector3D boundingCenter;
 
-    
     object* bvhRoot = nullptr;
     std::vector<object*> bvhObjects;
 
+    void addBranchMesh(const Vector3D &start, const Vector3D &end, double radius, int segments, const Material &mat);
+    void buildBVH();
+    void translate(const Vector3D &delta) override;
+    void rotate(const Vector3D &rotation);
+    void scale(const Vector3D &scaleVec);
+    void recomputeBounds();
+    void safeDeleteBVH();
 };
 
 class StabObject : public object {
@@ -92,6 +106,35 @@ public:
     }
 };
 
+class TriangleObject  : public object {
+public:
+    const Dreieck* t;
+
+    TriangleObject(const Dreieck* tri)
+        : object(tri->getMaterial()), t(tri)
+    {
+        Vector3D minB = t->getMinBound();
+        Vector3D maxB = t->getMaxBound();
+        boundingCenter = (minB + maxB) * 0.5;
+    }
+
+    void intersect(const Ray& ray, Hit& hit) const override {
+        t->intersect(ray, hit);
+    }
+
+    void getWorldAABB(Vector3D& min, Vector3D& max) const override {
+        min = t->getMinBound();
+        max = t->getMaxBound();
+    }
+
+    void drawFlat(Wireframe& wf, DrawMode mode) const override {
+        t->drawFlat(wf, mode);
+    }
+
+    void drawWireframePixels(Wireframe& wf, DrawMode mode) const override {
+        t->drawWireframePixels(wf, mode);
+    }
+};
 
 class LeafObject : public object {
 public:

@@ -43,6 +43,9 @@ public:
     virtual ~object() {};
 
     virtual void intersect(const Ray& ray, Hit& hit) const = 0;
+    virtual void translate(const Vector3D& delta) = 0;
+    virtual void rotate(const Vector3D& rotation) = 0;
+    virtual void scale(const Vector3D& rotation) = 0;
     void setPosition(const Vector3D& pos) { position = pos; }
     virtual void drawWireframePixels(Wireframe& wf, DrawMode mode) const = 0;
     virtual void drawFlat(Wireframe& wf, DrawMode mode) const = 0;

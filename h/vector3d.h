@@ -51,4 +51,5 @@ public:
     Vector3D maxVec(const Vector3D & a, const Vector3D & b);
 
     friend std::ostream &operator<<(std::ostream &os, const Vector3D &vec);
+    Vector3D operator/(double s) const;
 };

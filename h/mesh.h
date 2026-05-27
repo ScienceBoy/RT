@@ -28,8 +28,9 @@ public:
     std::vector<object*> bvhObjects;
 
     void intersect(const Ray& ray, Hit& hit) const override;
-
-    void translate(const Vector3D& delta);
+    void rotate(const Vector3D& rotation) override;
+    void scale(const Vector3D& scaleVec) override;
+    void translate(const Vector3D& delta) override;
     void drawWireframePixels(Wireframe& wf, DrawMode mode) const override;
     void drawFlat(Wireframe& wf, DrawMode mode) const override;
 
@@ -42,4 +43,6 @@ public:
     virtual void setTexture(std::shared_ptr<Texture> tex) override;
     virtual void setTextureMode(TextureMode mode) override;
     virtual void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int octaves);
+    void recomputeTriangleDataAndMeshBounds();
+    void recomputeMeshBoundsFromTriangles();
 };

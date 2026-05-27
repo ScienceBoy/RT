@@ -5,6 +5,8 @@
 #include "hit.h"
 #include "TextureManager.h"
 
+extern Vector3D textureRotation;
+
 class Kugel : public object
 {
 public:
@@ -16,11 +18,13 @@ public:
 
     // Schnitt mit Ray
     void intersect(const Ray& ray, Hit& hit) const override;
-
+    void translate(const Vector3D &delta) override {};
     void drawFlat(Wireframe &wf, DrawMode mode) const override;
     void drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL) const override;
     void updateBounds();
     virtual void getWorldAABB(Vector3D& min, Vector3D& max) const;
+    void rotate(const Vector3D &rotation);
+    void scale(const Vector3D &scaleVec);
 };
 
 double randomDouble(double min, double max);

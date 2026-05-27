@@ -25,6 +25,8 @@ public:
 
     // Schnitt mit Ray
     void intersect(const Ray& ray, Hit& hit) const override;
+    void rotate(const Vector3D& rotation) override;
+    void scale(const Vector3D& scaleVec) override;
 
     void drawFlat(Wireframe &wf, DrawMode mode) const override;
     void drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL) const override;
@@ -44,4 +46,9 @@ public:
     {
         return mat;
     }
+    Dreieck(const Vector3D &A, const Vector3D &B, const Vector3D &C, const Vector3D &NA, const Vector3D &NB, const Vector3D &NC, const Material &mat);
+    void translate(const Vector3D &delta) override {};
+    void rebuild();
+    void computeNormal();
+    void updateBounds();
 };
