@@ -6,6 +6,9 @@
 #include "vector3d.h"
 #include "object.h"
 #include "hit.h"
+#include "kugel.h"
+#include "rotations.h"
+#include <math.h>
 
 #pragma pack(push, 1)
 
@@ -156,8 +159,8 @@ Farbe Texture::backgroundCalc(std::string type, Vector3D dir)
         double phi = atan2(dir.x, dir.z);
         double theta = asin(dir.y);
 
-        double u = 0.5 + phi / (2 * 3.14159265);
-        double v = 0.5 + theta / 3.14159265;
+        double u = 0.5 + phi / (2 * M_PI);
+        double v = 0.5 + theta / M_PI;
 
         if (u < 0) u += 1;
 
@@ -194,11 +197,21 @@ Farbe Texture::texture(Farbe farbe, Hit hit)
     {
         Vector3D d = (hit.position - obj->position).normalized();
 
+        // --- Texture rotation (inverse rotation anwenden) ---
+        double rx = textureRotation.x * M_PI / 180.0;
+        double ry = textureRotation.y * M_PI / 180.0;
+        double rz = textureRotation.z * M_PI / 180.0;
+
+        d = rotateX(d, -rx);
+        d = rotateY(d, -ry);
+        d = rotateZ(d, -rz);
+
+        // --- spherical mapping ---
         double phi = atan2(d.x, d.z);
         double theta = asin(d.y);
 
-        double u = 0.5 + phi / (2 * 3.14159265);
-        double v = 0.5 + theta / 3.14159265;
+        double u = 0.5 + phi / (2.0 * M_PI);
+        double v = 0.5 + theta / M_PI;
 
         return obj->texture->getPixel(u, v);
     }
@@ -241,7 +254,7 @@ Farbe Texture::texture(Farbe farbe, Hit hit)
 
         // 🔵 Mantel
         double phi = atan2(p.x, p.z);
-        double u = 0.5 + phi / (2 * 3.14159265);
+        double u = 0.5 + phi / (2 * M_PI);
 
         double v = (p.y - obj->minBound.y) / (obj->maxBound.y - obj->minBound.y);
 

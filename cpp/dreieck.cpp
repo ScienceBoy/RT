@@ -2,7 +2,9 @@
 #include "wireframe.h"
 #include "camera.h"
 #include <algorithm>
+#include "stats.h"
 #include <cmath>
+#include "rotations.h"
 
 // Standardkonstruktor
 Dreieck::Dreieck() 
@@ -91,15 +93,179 @@ Dreieck::Dreieck(const Vector3D& A, const Vector3D& B, const Vector3D& C, const 
 
     }
 
-// Optional: Dreieck verschieben
+Dreieck::Dreieck(
+    const Vector3D& A,
+    const Vector3D& B,
+    const Vector3D& C,
+
+    const Vector3D& NA,
+    const Vector3D& NB,
+    const Vector3D& NC,
+
+    const Material& mat)
+
+    : object(mat),
+      a(A), b(B), c(C),
+      nA(NA), nB(NB), nC(NC)
+{
+    position = Vector3D(0,0,0);
+
+    edge1 = b - a;
+    edge2 = c - a;
+
+    geomNormale =
+        edge1.cross(edge2).normalized();
+
+    normale = geomNormale;
+
+    hasVertexNormals = true;
+
+    // Bounding Box
+    minBound = Vector3D(
+        std::min({a.x, b.x, c.x}),
+        std::min({a.y, b.y, c.y}),
+        std::min({a.z, b.z, c.z})
+    );
+
+    maxBound = Vector3D(
+        std::max({a.x, b.x, c.x}),
+        std::max({a.y, b.y, c.y}),
+        std::max({a.z, b.z, c.z})
+    );
+
+    // Sphere
+    Vector3D center =
+        (a + b + c) / 3.0;
+
+    boundingCenter = center;
+
+    boundingRadius = std::max({
+        (a - center).length(),
+        (b - center).length(),
+        (c - center).length()
+    });
+
+    uvA = {0.0, 0.0};
+    uvB = {1.0, 0.0};
+    uvC = {0.0, 1.0};
+}
+
+void Dreieck::rebuild()
+{
+    edge1 = b - a;
+    edge2 = c - a;
+
+    normale = edge1.cross(edge2).normalized();
+    geomNormale = normale;
+
+    minBound = Vector3D(
+        std::min({a.x, b.x, c.x}),
+        std::min({a.y, b.y, c.y}),
+        std::min({a.z, b.z, c.z})
+    );
+
+    maxBound = Vector3D(
+        std::max({a.x, b.x, c.x}),
+        std::max({a.y, b.y, c.y}),
+        std::max({a.z, b.z, c.z})
+    );
+
+    Vector3D center = (a + b + c) / 3.0;
+
+    //boundingCenter = center;
+    boundingCenter = 0.5 * (minBound + maxBound);
+
+    boundingRadius = std::max({
+        (a - center).length(),
+        (b - center).length(),
+        (c - center).length()
+    });
+}
+
+// Dreieck verschieben
 void Dreieck::setPosition(const Vector3D& pos)
 {
     position = pos;
 }
 
+void Dreieck::rotate(const Vector3D& rotation)
+{
+    Vector3D center = (a + b + c) / 3.0;
+
+    double rx = rotation.x * M_PI / 180.0;
+    double ry = rotation.y * M_PI / 180.0;
+    double rz = rotation.z * M_PI / 180.0;
+
+    auto rot = [&](Vector3D& p)
+    {
+        p = p - center;
+
+        p = rotateX(p, rx);
+        p = rotateY(p, ry);
+        p = rotateZ(p, rz);
+
+        p = p + center;
+    };
+
+    rot(a);
+    rot(b);
+    rot(c);
+
+    rebuild();
+}
+
+void Dreieck::scale(const Vector3D& scaleVec)
+{
+    Vector3D center = (a + b + c) / 3.0;
+
+    auto scl = [&](Vector3D& p)
+    {
+        p = p - center;
+
+        p.x *= scaleVec.x;
+        p.y *= scaleVec.y;
+        p.z *= scaleVec.z;
+
+        p = p + center;
+    };
+
+    scl(a);
+    scl(b);
+    scl(c);
+
+    rebuild();
+}
+
+void Dreieck::computeNormal()
+{
+    normale = (b - a).cross(c - a).normalized();
+
+    nA = normale;
+    nB = normale;
+    nC = normale;
+}
+
+void Dreieck::updateBounds()
+{
+    minBound.x = std::min({a.x, b.x, c.x});
+    minBound.y = std::min({a.y, b.y, c.y});
+    minBound.z = std::min({a.z, b.z, c.z});
+
+    maxBound.x = std::max({a.x, b.x, c.x});
+    maxBound.y = std::max({a.y, b.y, c.y});
+    maxBound.z = std::max({a.z, b.z, c.z});
+
+    boundingCenter = (minBound + maxBound) * 0.5;
+}
+
 // Möller-Trumbore Schnitt
 void Dreieck::intersect(const Ray& ray, Hit& hit) const
 {    
+    //triangleTests++;
+    // BVH / AABB Early-Out
+    if (!intersectBounding(ray))
+        return;
+
     const double EPS = 1e-6;
 
     //  Ray in lokalen Raum transformieren

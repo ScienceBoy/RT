@@ -26,6 +26,7 @@
 #include "object.h"
 #include <iostream>
 #include "mesh.h"
+#include <numbers>
 
 object* selectedObject = nullptr;
 light* selectedLight = nullptr;
@@ -33,7 +34,7 @@ SelectedType selectedType = SelectedType::NONE;
 SelectedAction selectedAction = SelectedAction::MOVE;
 
 void moveWinRayToSecondMonitor(Fenster& winRay);
-static bool wasPressed = false;
+//static bool wasPressed = false;
 int selectionIndex = -1;
 
 //std::vector<std::unique_ptr<object>> scene;
@@ -119,7 +120,7 @@ int main()
     auto handleAnimationStep = [&](WPARAM key) {
         if(key == 'N' && currentStep < animationSteps.size()) {
             double t = animationSteps[currentStep];
-            jumpingSphere->position.y = startPos.y + amplitude * sin(t * 3.14159265); // Kugelposition aktualisieren
+            jumpingSphere->position.y = startPos.y + amplitude * sin(t * M_PI); // Kugelposition aktualisieren
             currentStep++;               // nächster Frame
         }
     };*/
@@ -141,17 +142,17 @@ int main()
         
         if (key == 'X') // Stop rendering
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 stopRenderingThreads();
-            }
-            else
-                wasPressed = false;
+            //}
+            //else
+                //wasPressed = false;
         }
         else if (key == 'C')    // Clear Scene (bevor  neue Szene geladen werden soll)
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 stopRenderingThreads();
                 while (rendernRunning)
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -170,34 +171,38 @@ int main()
                 wfSide.setScene(scene);
                 wfPersp.setScene(scene);
                 //computeSceneBounds();
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
         else if (key == 'F')    // Flat / Wireframe
         {            
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 useFlat = !useFlat;
-            }
-            else
-                wasPressed = false;  
+            //}
+            //else
+                //wasPressed = false;  
         }
         else if (key == 'I')    // Import Scene
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
 
                 stopRenderingThreads();
 
                 std::string filename = objDialog.openFileDialog();
-                if (filename.empty()) return;
+                if (filename.empty())
+                {
+                    //wasPressed = false;
+                    return;
+                }
 
                 std::thread([&, filename]() 
                 {
                     rendernRunning = true;
 
-                    objDialog.import(filename); // nur Import, kein Dialog
+                    objDialog.import(filename); 
 
                     rendernRunning = false;
 
@@ -206,24 +211,24 @@ int main()
                     wfSide.setScene(scene);
                     wfPersp.setScene(scene);
                 }).detach();
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
         else if (key == 'M')    // Select "Move"-Action
         {            
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 selectedAction = SelectedAction::MOVE;
-            }
-            else
-                wasPressed = false;  
+            //}
+            //else
+                //wasPressed = false;  
         }
         else if (key == 'N')    // Select next object or light
         {
-            if (!wasPressed)
-            {
-                wasPressed = true;
+            //if (!wasPressed)
+            //{
+                //wasPressed = true;
 
                 int total = wfFront.sceneobjects.size() + lights.size();
 
@@ -253,14 +258,14 @@ int main()
                     selectedLight = lights[lightIndex].get();
                     selectedType = SelectedType::LIGHT;
                 }
-            }
-            else
-                wasPressed = false;
+            //}
+            //else
+                //wasPressed = false;
         }
         else if (key == 'O')    // Output image and xml
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 //fenster.saveBMPWithTimestamp(L"screenshot");  // Ergebnis: "screenshot-06-04-2026-14-45-10.bmp"
                 ///saveWindowBMPWithTimestamp(winRay.getHWND(), L"screenshot");
                 auto name = askFilename(winRay.getHWND());
@@ -272,53 +277,53 @@ int main()
                     SceneSaver::saveSceneToXML(std::string(filename.begin(), filename.end()));
                 }
 
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
         else if (key == 'Q')    // Quit
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 DestroyWindow(winRay.getHWND());
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
         else if (key == 'R')    // Select "Rotate"-Action
         {            
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 selectedAction = SelectedAction::ROTATE;
-            }
-            else
-                wasPressed = false;  
+            //}
+            //else
+                //wasPressed = false;  
         }        
         else if (key == 'S')    // Select "Scale"-Action
         {            
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 selectedAction = SelectedAction::SCALE;
-            }
-            else
-                wasPressed = false;  
+            //}
+            //else
+                //wasPressed = false;  
         }
         else if (key == 'Y')    // Start rendering
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 stopRenderingThreads();
                 bringToFront(winRay);
                 preprocessing(winRay);
                 std::thread([&winRay]() {startRendering(winRay);}).detach();
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
         else if (key == 'Z')    // Set LookAt to center of scene
         {
-            if (!wasPressed) {
-                wasPressed = true;
+            //if (!wasPressed) {
+                //wasPressed = true;
                 if (!cam.empty())
                 {
                     Vector3D sceneCenter = (sceneMax - sceneMin) * 0.5 + sceneMin;
@@ -328,46 +333,101 @@ int main()
                     Vector3D camPos = sceneCenter + Vector3D(0, 0, -2.5 * radius);
                     cam[0] = Camera(camPos, sceneCenter, 120.0, 16.0/9.0);
                 }
-            }
-            else
-                wasPressed = false;            
+            //}
+            //else
+                //wasPressed = false;            
         }
-        else if (key == '6')    // "nach rechts" Translation  oder Rotation
-        {            
-            if (!wasPressed) {
-                wasPressed = true;
-                // Action soll "plus" / "mehr" / "nach rechts" sein
+        else if (
+            key == '6' || key == VK_NUMPAD6 ||
+            key == '4' || key == VK_NUMPAD4 ||
+            key == '8' || key == VK_NUMPAD8 ||
+            key == '2' || key == VK_NUMPAD2 ||
+            key == '9' || key == VK_NUMPAD9 ||
+            key == '1' || key == VK_NUMPAD1)
+        {
+            Vector3D delta(0,0,0);
+
+            // Richtung bestimmen
+            if (key == '6' || key == VK_NUMPAD6)
+                delta = Vector3D(1,0,0);
+
+            else if (key == '4' || key == VK_NUMPAD4)
+                delta = Vector3D(-1,0,0);
+
+            else if (key == '8' || key == VK_NUMPAD8)
+                delta = Vector3D(0,-1,0);
+
+            else if (key == '2' || key == VK_NUMPAD2)
+                delta = Vector3D(0,1,0);
+
+            else if (key == '9' || key == VK_NUMPAD9)
+                delta = Vector3D(0,0,1);
+
+            else if (key == '1' || key == VK_NUMPAD1)
+                delta = Vector3D(0,0,-1);
+
+            // ---------- OBJECT ----------
+            if (selectedType == SelectedType::OBJECT)
+            {
+                if (selectionIndex >= 0 &&
+                    selectionIndex < wfFront.sceneobjects.size())
+                {
+                    object* obj = wfFront.sceneobjects[selectionIndex];
+
+                    if (obj)
+                    {
+                        switch (selectedAction)
+                        {
+                            case SelectedAction::MOVE:
+                                obj->translate(delta);
+                                break;
+
+                            case SelectedAction::ROTATE:
+                                obj->rotate(delta);
+                                break;
+
+                            case SelectedAction::SCALE:
+                                obj->scale(delta.normalized() / 10.0 + Vector3D(1.0,1.0,1.0));
+                                break;
+                        }
+                    }
+                }
             }
-            else
-                wasPressed = false;  
-        }        
-        else if (key == '4')    // "nach links" Translation oder Rotation
-        {            
-            if (!wasPressed) {
-                wasPressed = true;
-                // Action soll "minus" / "weniger" / "nach links" sein
+
+            // ---------- LIGHT ----------
+            else if (selectedType == SelectedType::LIGHT)
+            {
+                int lightIndex = selectionIndex - wfFront.sceneobjects.size();
+
+                if (lightIndex >= 0 &&
+                    lightIndex < lights.size())
+                {
+                    light* l = lights[lightIndex].get();
+
+                    if (l)
+                    {
+                        // Licht kann nur bewegt werden
+                        l->translate(delta);
+                    }
+                }
             }
-            else
-                wasPressed = false;  
-        }                
-        else if (key == '8')    // "grösser" skalieren
-        {            
-            if (!wasPressed) {
-                wasPressed = true;
-                // Action soll "grösser" skalieren
-            }
-            else
-                wasPressed = false;  
-        }        
-        else if (key == '2')    // "kleiner" skalieren
-        {            
-            if (!wasPressed) {
-                wasPressed = true;
-                // Action soll "kleiner" skalieren
-            }
-            else
-                wasPressed = false;  
-        }                
+        }
+        else if (key == VK_ADD || (key == VK_OEM_PLUS && (GetKeyState(VK_SHIFT) & 0x8000))) {
+            scale *= 1.1;
+            if (scale < 0.001) scale = 0.001;
+            std::cout << "Zoom In, scale = " << scale << std::endl;
+        }
+        else if (key == VK_SUBTRACT || key == VK_OEM_MINUS) {
+            scale /= 1.1;
+            if (scale < 0.001) scale = 0.001;
+            std::cout << "Zoom Out, scale = " << scale << std::endl;
+        }      
+        else if (key == VK_ESCAPE)
+        {
+            selectedType = SelectedType::NONE;
+            selectedObject = nullptr;
+            selectedLight = nullptr;
+        }
         else 
             wfPersp.onKey(key); 
     };
@@ -378,7 +438,7 @@ int main()
     winPersp.setKeyHandler(handleKeys);
     //winRay.setKeyHandler(handleAnimationStep);
 
-    std::thread globalKeys([&]{
+    /*std::thread globalKeys([&]{
         while(true){
             if(GetAsyncKeyState('S') & 0x8000) handleKeys('S');
             if(GetAsyncKeyState('R') & 0x8000) handleKeys('R');
@@ -390,7 +450,7 @@ int main()
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
-    globalKeys.detach();
+    globalKeys.detach();*/
 
     winRay.loop();
 

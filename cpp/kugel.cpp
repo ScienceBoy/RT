@@ -7,6 +7,8 @@
 #include "camera.h"
 #include "TextureManager.h"
 
+Vector3D textureRotation = Vector3D(0,0,0);
+
 // Standardkonstruktor
 Kugel::Kugel() : object(Material()), radius(1.0)
 {
@@ -96,13 +98,13 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
 
     for (int i = 0; i < stacks; i++)
     {
-        double phi0 = 3.14159265 * i / stacks;
-        double phi1 = 3.14159265 * (i + 1) / stacks;
+        double phi0 = M_PI * i / stacks;
+        double phi1 = M_PI * (i + 1) / stacks;
 
         for (int j = 0; j < slices; j++)
         {
-            double theta0 = 2 * 3.14159265 * j / slices;
-            double theta1 = 2 * 3.14159265 * (j + 1) / slices;
+            double theta0 = 2 * M_PI * j / slices;
+            double theta1 = 2 * M_PI * (j + 1) / slices;
 
             // 4 Punkte auf Kugel
             Vector3D p0(
@@ -206,8 +208,8 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // XZ-Ebene
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
 
         Vector3D p0(position.x + radius*cos(a0), position.y, position.z + radius*sin(a0));
         Vector3D p1(position.x + radius*cos(a1), position.y, position.z + radius*sin(a1));
@@ -224,8 +226,8 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // XY-Ebene
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
 
         Vector3D p0(position.x + radius*cos(a0), position.y + radius*sin(a0), position.z);
         Vector3D p1(position.x + radius*cos(a1), position.y + radius*sin(a1), position.z);
@@ -238,8 +240,8 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     // YZ-Ebene
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2*3.14159265*i/steps;
-        double a1 = 2*3.14159265*(i+1)/steps;
+        double a0 = 2*M_PI*i/steps;
+        double a1 = 2*M_PI*(i+1)/steps;
 
         Vector3D p0(position.x, position.y + radius*cos(a0), position.z + radius*sin(a0));
         Vector3D p1(position.x, position.y + radius*cos(a1), position.z + radius*sin(a1));
@@ -280,7 +282,7 @@ Vector3D randomInSphere()
 Vector3D randomOnUnitSphere()
 {
     double z = randomDouble(-1.0, 1.0);
-    double t = randomDouble(0.0, 2.0 * 3.14159265);
+    double t = randomDouble(0.0, 2.0 * M_PI);
 
     double r = std::sqrt(1.0 - z * z);
 
@@ -324,6 +326,16 @@ void generateCloudRecursive(
             mat
         );
     }
+}
+
+void Kugel::rotate(const Vector3D& rotation)
+{
+    textureRotation += rotation;
+}
+
+void Kugel::scale(const Vector3D& scaleVec)
+{
+    radius *= sqrt(scaleVec.x + scaleVec.y + scaleVec.z);
 }
 
 // öffentliche Funktion

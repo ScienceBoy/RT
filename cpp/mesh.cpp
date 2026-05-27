@@ -4,6 +4,11 @@
 #include <fstream>
 #include <sstream>
 #include "PerlinNoise.h"
+#include "rotations.h"
+#include <algorithm>
+#include <limits>
+
+
 
 Mesh::Mesh(const Material& m)
     : object(m)
@@ -23,6 +28,102 @@ Mesh::Mesh(const std::vector<Dreieck>& tris, const Vector3D& pos)
 Mesh::~Mesh()
 {
     delete bvhRoot;
+}
+
+static inline void updateTriDerived(Dreieck& tri)
+{
+    // AABB
+    tri.minBound.x = std::min({ tri.a.x, tri.b.x, tri.c.x });
+    tri.minBound.y = std::min({ tri.a.y, tri.b.y, tri.c.y });
+    tri.minBound.z = std::min({ tri.a.z, tri.b.z, tri.c.z });
+
+    tri.maxBound.x = std::max({ tri.a.x, tri.b.x, tri.c.x });
+    tri.maxBound.y = std::max({ tri.a.y, tri.b.y, tri.c.y });
+    tri.maxBound.z = std::max({ tri.a.z, tri.b.z, tri.c.z });
+
+    // BVH-Split-Center (wichtig wenn bvh.h auf boundingCenter sortiert)
+    tri.boundingCenter = 0.5 * (tri.minBound + tri.maxBound);
+
+    // Normale (wichtig falls intersect/ shading cached normal nutzt)
+    Vector3D e1 = tri.b - tri.a;
+    Vector3D e2 = tri.c - tri.a;
+    tri.geomNormale = e1.cross(e2).normalized();
+    tri.normale     = tri.geomNormale;
+
+    tri.rebuild();   
+}
+
+
+void Mesh::recomputeMeshBoundsFromTriangles()
+{
+    if (triangles.empty()) return;
+
+    minBound = Vector3D( std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::infinity() );
+
+    maxBound = Vector3D(-std::numeric_limits<double>::infinity(),
+                        -std::numeric_limits<double>::infinity(),
+                        -std::numeric_limits<double>::infinity() );
+
+    for (auto& tri : triangles)
+    {
+        updateTriDerived(tri);
+
+        minBound.x = std::min(minBound.x, tri.minBound.x);
+        minBound.y = std::min(minBound.y, tri.minBound.y);
+        minBound.z = std::min(minBound.z, tri.minBound.z);
+
+        maxBound.x = std::max(maxBound.x, tri.maxBound.x);
+        maxBound.y = std::max(maxBound.y, tri.maxBound.y);
+        maxBound.z = std::max(maxBound.z, tri.maxBound.z);
+    }
+
+    boundingCenter = 0.5 * (minBound + maxBound);
+    boundingRadius = (maxBound - boundingCenter).length();
+}
+
+void Mesh::recomputeTriangleDataAndMeshBounds()
+{
+    if (triangles.empty()) return;
+
+    // Mesh bounds initialisieren
+    minBound = Vector3D( 1e30,  1e30,  1e30);
+    maxBound = Vector3D(-1e30, -1e30, -1e30);
+
+    for (auto& tri : triangles)
+    {
+        // 1) Triangle AABB neu
+        tri.minBound.x = std::min({ tri.a.x, tri.b.x, tri.c.x });
+        tri.minBound.y = std::min({ tri.a.y, tri.b.y, tri.c.y });
+        tri.minBound.z = std::min({ tri.a.z, tri.b.z, tri.c.z });
+
+        tri.maxBound.x = std::max({ tri.a.x, tri.b.x, tri.c.x });
+        tri.maxBound.y = std::max({ tri.a.y, tri.b.y, tri.c.y });
+        tri.maxBound.z = std::max({ tri.a.z, tri.b.z, tri.c.z });
+
+        // 2) boundingCenter neu (BVH nutzt das zum Splitten!)
+        tri.boundingCenter = 0.5 * (tri.minBound + tri.maxBound);
+
+        // 3) Normale neu (Flat; robust nach rotate/scale)
+        Vector3D e1 = tri.b - tri.a;
+        Vector3D e2 = tri.c - tri.a;
+        tri.geomNormale = e1.cross(e2).normalized();
+        tri.normale = tri.geomNormale;
+
+        // 4) Mesh AABB aggregieren
+        minBound.x = std::min(minBound.x, tri.minBound.x);
+        minBound.y = std::min(minBound.y, tri.minBound.y);
+        minBound.z = std::min(minBound.z, tri.minBound.z);
+
+        maxBound.x = std::max(maxBound.x, tri.maxBound.x);
+        maxBound.y = std::max(maxBound.y, tri.maxBound.y);
+        maxBound.z = std::max(maxBound.z, tri.maxBound.z);
+    }
+
+    // Optional: Mesh bounding sphere data updaten, falls du es nutzt
+    boundingCenter = 0.5 * (minBound + maxBound);
+    boundingRadius = (maxBound - boundingCenter).length();
 }
 
 void Mesh::intersect(const Ray& ray, Hit& hit) const
@@ -51,6 +152,9 @@ void Mesh::setPosition(const Vector3D& pos)
 
 void Mesh::buildBVH()
 {
+    //delete bvhRoot;
+    bvhRoot = nullptr;
+
     bvhObjects.clear();
     bvhObjects.reserve(triangles.size());
 
@@ -164,6 +268,71 @@ bool Mesh::loadOBJ(const std::string& filename) {
     bvhRoot = buildBVH(objs);
 }*/
 
+
+void Mesh::rotate(const Vector3D& rotation)
+{
+    // Center aus aktueller Geometrie bestimmen (robust, auch wenn min/max inkonsistent sind)
+    recomputeMeshBoundsFromTriangles();
+    Vector3D center = 0.5 * (minBound + maxBound);
+
+    double rx = rotation.x * M_PI / 180.0;
+    double ry = rotation.y * M_PI / 180.0;
+    double rz = rotation.z * M_PI / 180.0;
+
+    auto rotP = [&](Vector3D& p)
+    {
+        p -= center;
+        p = rotateX(p, rx);
+        p = rotateY(p, ry);
+        p = rotateZ(p, rz);
+        p += center;
+    };
+
+    for (auto& tri : triangles)
+    {
+        rotP(tri.a);
+        rotP(tri.b);
+        rotP(tri.c);
+
+        updateTriDerived(tri); // <<< WICHTIG: Dreieck sofort konsistent halten
+    }
+
+    // Mesh-Bounds + BVH
+    recomputeMeshBoundsFromTriangles();
+    buildBVH();
+}
+
+
+
+void Mesh::scale(const Vector3D& scaleVec)
+{
+    recomputeMeshBoundsFromTriangles();
+    Vector3D center = 0.5 * (minBound + maxBound);
+
+    auto sclP = [&](Vector3D& p)
+    {
+        p -= center;
+        p.x *= scaleVec.x;
+        p.y *= scaleVec.y;
+        p.z *= scaleVec.z;
+        p += center;
+    };
+
+    for (auto& tri : triangles)
+    {
+        sclP(tri.a);
+        sclP(tri.b);
+        sclP(tri.c);
+
+        updateTriDerived(tri); // <<< WICHTIG
+    }
+
+    recomputeMeshBoundsFromTriangles();
+    buildBVH();
+}
+
+
+
 void Mesh::translate(const Vector3D& delta)
 {
     for (auto& tri : triangles)
@@ -175,12 +344,10 @@ void Mesh::translate(const Vector3D& delta)
 
     position += delta;
 
-    minBound += delta;
-    maxBound += delta;
-    boundingCenter += delta;
-
-    this->buildBVH();
+    recomputeTriangleDataAndMeshBounds();
+    buildBVH();
 }
+
 
 
 void Mesh::getWorldAABB(Vector3D& minOut, Vector3D& maxOut) const

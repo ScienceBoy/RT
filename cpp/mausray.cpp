@@ -8,7 +8,7 @@
     double ndcX = (2.0 * x) / w - 1.0;
     double ndcY = 1.0 - (2.0 * y) / h;
 
-    double fovRad = camera->fov * 3.14159265 / 180.0;
+    double fovRad = camera->fov * M_PI / 180.0;
     double scale = tan(fovRad / 2.0);
 
     Vector3D rayDirCamera(
@@ -36,7 +36,7 @@ Ray createRayFromMouse(int mouseX, int mouseY, int screenW, int screenH, Camera*
     double ndcY = (1.0 - 2.0 * mouseY / screenH) / zoom;
 
     // Berücksichtige FOV
-    double fovRad = camera->fov * 3.14159265 / 180.0;
+    double fovRad = camera->fov * M_PI / 180.0;
     double scale = tan(fovRad / 2.0);
 
     double px = ndcX * scale * aspect;

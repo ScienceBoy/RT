@@ -67,7 +67,22 @@ void render(Fenster& f, int xStart, int xEnd, int yStart, int yEnd,
                     //farbe = farbe * (1.0 - h.t/(2*sceneMax.z));    // Depth Cueing
                     //Farbe farbe = blinnPhong(*h.material, h.normale, h.position, cam[0].position); // Blinn-Phong
                     //Farbe farbe = trace(r, 10, 1.0); 
-                    farbe += trace(r, 10, 1.0);
+                    //farbe += trace(r, 10, 1.0);
+                    Farbe sampleColor(0,0,0);
+
+                    for(int p = 0; p < pathSamples; p++)
+                    {
+                        double px = sx + randomDouble(-0.5, 0.5);
+                        double py = sy + randomDouble(-0.5, 0.5);
+                        Ray r = cam[0].makeRay(px, py, f);
+                        h = ClosestPointOfIntersection(r);      // Prüfen auf Treffen von Objekten
+                        sampleColor += trace(r, renderingDepth, 1.0);
+                    }
+
+                    sampleColor =
+                        sampleColor * (1.0 / pathSamples);
+
+                    farbe += sampleColor;
                     //farbe = farbe + Farbe(0.05, 0.05, 0.05);  // Globale ambiente Helligkeit
                     if (nebelVorhanden) farbe = nebel(h, farbe);
                     if (rauchVorhanden) farbe = rauch(r, farbe);
@@ -375,7 +390,7 @@ Farbe wolkeInBox(Ray ray, double t_entry, double t_exit, Farbe cloudColor)
 double phaseHG(double cosTheta, double g)
 {
     double denom = 1.0 + g*g - 2.0*g*cosTheta;
-    return (1.0 - g*g) / (4.0 * 3.14159265 * pow(denom, 1.5));
+    return (1.0 - g*g) / (4.0 * M_PI * pow(denom, 1.5));
 }
 
 // =======================================================
@@ -1212,16 +1227,58 @@ Farbe trace(const Ray& ray, int depth, double current_ior = 1.0)
     Farbe indirect(0,0,0);
     if(kd > 0.001)
     {
-        Vector3D bounceDir = cosineSampleHemisphere(N);
-        Ray bounceRay(h.position + N*1e-4, bounceDir);
-        double cosTheta = std::max(0.0, bounceDir * N);
-        Farbe incoming = trace(bounceRay, depth-1, current_ior);
-        Farbe brdf = h.material->diffuse * (1.0 / 3.14159265);
-        double pdf = cosTheta / 3.14159265;
+        // -------------------------------------------------
+        // Russian Roulette
+        // -------------------------------------------------
+
+        double p = std::max({
+            h.material->diffuse.r,
+            h.material->diffuse.g,
+            h.material->diffuse.b
+        });
+
+        p = clamp(p, 0.1, 0.95);
+
+        // erst ab tieferen Bounces
+        if(depth < 7)
+        {
+            if(randomDouble(0,1) > p)
+                return result;
+        }
+
+        // -------------------------------------------------
+        // Diffuse Bounce
+        // -------------------------------------------------
+
+        Vector3D bounceDir =
+            cosineSampleHemisphere(N);
+
+        Ray bounceRay(
+            h.position + N*1e-4,
+            bounceDir);
+
+        double cosTheta =
+            std::max(0.0, bounceDir * N);
+
+        Farbe incoming =
+            trace(bounceRay, depth-1, current_ior);
+        
+        Farbe brdf =
+            h.material->diffuse *
+            (1.0 / M_PI);
+
+        double pdf =
+            cosTheta / M_PI;
+
         indirect =
             incoming *
             brdf *
-            cosTheta * (1.0 / pdf);
+            cosTheta *
+            (1.0 / pdf);
+
+        // Energieausgleich
+        indirect =
+            indirect * (1.0 / p);
     }
 
     result += indirect * kd;
@@ -1295,7 +1352,7 @@ Vector3D cosineSampleHemisphere(const Vector3D& N)
     double r1 = randomDouble(0,1);
     double r2 = randomDouble(0,1);
 
-    double phi = 2.0 * 3.14159265 * r1;
+    double phi = 2.0 * M_PI * r1;
 
     double x = cos(phi) * sqrt(r2);
     double y = sin(phi) * sqrt(r2);

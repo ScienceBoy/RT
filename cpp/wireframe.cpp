@@ -279,7 +279,7 @@ Vector3D rotateAroundAxis(
     const Vector3D& axis,
     double angleDeg)
 {
-    double a = angleDeg * 3.14159265 / 180.0;
+    double a = angleDeg * M_PI / 180.0;
     Vector3D k = axis.normalized();
 
     return v * cos(a)
@@ -289,7 +289,7 @@ Vector3D rotateAroundAxis(
 
 void Wireframe::onKey(WPARAM key)
 {
-    HWND foreground = GetForegroundWindow();
+/*    HWND foreground = GetForegroundWindow();
 
     if (foreground != fenster.getHWND())
     {
@@ -314,7 +314,7 @@ void Wireframe::onKey(WPARAM key)
         selectedCamera = nullptr;
 
         Mausdrag.active = false;
-    }
+    }*/
 
     /*if (key == VK_LEFT) {
         // 🔁 Kamera drehen
@@ -614,7 +614,7 @@ std::vector<PickResult> Wireframe::pickAll(const Ray& ray)
                 continue; // hinter der Kamera
 
             double zoom = 0.7;
-            double f = 1.0 / tan((cam[0].fov * 3.14159265/180.0) / 2.0);
+            double f = 1.0 / tan((cam[0].fov * M_PI/180.0) / 2.0);
 
             // Perspektivisch skalierter Radius in 3D:
             std::cout << "radius vorher: " << radius << "dist: " << dist << '\n';

@@ -126,7 +126,7 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
 
     double phi = atan2(y_uv, x_uv);
 
-    double u = 0.5 + phi / (2 * 3.14159265);
+    double u = 0.5 + phi / (2 * M_PI);
     double v = h;
 
     hit.u = u;
@@ -153,8 +153,8 @@ void Stab::drawFlat(Wireframe& wf, DrawMode mode) const
 
     for(int i = 0; i < steps; i++)
     {
-        double a0 = 2 * 3.14159265 * i/steps;
-        double a1 = 2 * 3.14159265 * (i+1)/steps;
+        double a0 = 2 * M_PI * i/steps;
+        double a1 = 2 * M_PI * (i+1)/steps;
 
         Vector3D r0 = right*cos(a0) + forward*sin(a0);
         Vector3D r1 = right*cos(a1) + forward*sin(a1);
@@ -230,8 +230,8 @@ void Stab::drawWireframePixels(Wireframe& wf, DrawMode mode) const
 
     for(int i=0;i<steps;i++)
     {
-        double a0 = 2 * 3.14159265 * i/steps;
-        double a1 = 2 * 3.14159265 * (i+1)/steps;
+        double a0 = 2 * M_PI * i/steps;
+        double a1 = 2 * M_PI * (i+1)/steps;
 
         Vector3D dir0(cos(a0),0,sin(a0));
         Vector3D dir1(cos(a1),0,sin(a1));

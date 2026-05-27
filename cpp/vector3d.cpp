@@ -32,6 +32,11 @@ Vector3D Vector3D::cross(const Vector3D& v) const {
     );
 }
 
+Vector3D Vector3D::operator/(double s) const
+{
+    return Vector3D(x / s, y / s, z / s);
+}
+
 std::ostream& operator<<(std::ostream& os, const Vector3D& vec) {
     os << "("
        << vec.x << ", "

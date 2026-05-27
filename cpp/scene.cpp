@@ -84,8 +84,11 @@ Vector3D WolkeboxMax(90.0, 20.0, -90.0);
 bool terrainVorhanden = false;
 bool wasserVorhanden = false;
 
-bool antialiasing = false;
-int antialiasingSamples = 9; // 1 = no antialiasing   16 = good antialiasing
+bool antialiasing = false;    //true;
+int antialiasingSamples = 2; // 1 = no antialiasing   16 = good antialiasing
+
+int pathSamples = 1;   //16;
+int renderingDepth = 6;
 
 //Camera cam(Vector3D(0.5,0.5,-250), Vector3D(0.5,0.5,1.0), 90.0, 16.0/9.0);
 

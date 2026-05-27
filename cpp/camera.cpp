@@ -15,7 +15,7 @@ Camera::Camera(const Vector3D& pos, const Vector3D& lookAt, double fovDeg, doubl
     u = up.cross(w).normalized();
     v = w.cross(u);
 
-    double theta = fov * 3.14159265 / 180.0;
+    double theta = fov * M_PI / 180.0;
     halfHeight = tan(theta/2.0);
     halfWidth = aspectRatio * halfHeight;
 }
@@ -256,7 +256,7 @@ void Camera::update()
     u = up.cross(w).normalized();
     v = w.cross(u);
     
-    double theta = fov * 3.14159265 / 180.0;
+    double theta = fov * M_PI / 180.0;
     halfHeight = tan(theta / 2);
     halfWidth  = aspectRatio * halfHeight;
 

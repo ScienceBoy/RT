@@ -9,7 +9,10 @@
 #include <random>
 #include "threadPool.h"
 #include "SceneSaver.h"
+#include "stats.h"
 #include <sstream>
+
+std::atomic<long long> triangleTests = 0;
 
 // global
 std::atomic<bool> stopRendering(false);
@@ -159,6 +162,11 @@ void startRendering(Fenster& f)
         SceneSaver::saveSceneToXML(std::string(filename.begin(), filename.end()));
     }*/
     saveWindowBMPWithTimestamp(f.getHWND(), L"screenshot");
+    std::cout << "Triangle Tests: "
+            << triangleTests
+            << std::endl;
+
+    triangleTests = 0;
 }
 
 void stopRenderingNow()

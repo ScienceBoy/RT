@@ -120,7 +120,7 @@ std::unique_ptr<object> baum::Blatt(
 
     for (int i = 0; i < 10; i++)
     {
-        double angle = (2.0 * 3.14159265 * i) / 10.0;
+        double angle = (2.0 * M_PI * i) / 10.0;
 
         double radius = size * randomDouble(0.5, 1.0);
 

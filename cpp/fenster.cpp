@@ -28,6 +28,10 @@
 #include <commdlg.h>
 
 extern Fenster winRay; 
+extern Fenster winTop; 
+extern Fenster winFront; 
+extern Fenster winSide; 
+extern Fenster winPersp; 
 
 ///////////////////////////////////////////////////////////////////////////
 //  Fenster – MULTI-WINDOW-FÄHIGE IMPLEMENTIERUNG
@@ -118,10 +122,13 @@ LRESULT Fenster::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
     switch(msg)
     {
         case WM_KEYDOWN:
+        {
             if (onKey)
                 onKey(wParam);
+
             return 0;
-            
+        }
+        
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
