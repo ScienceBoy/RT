@@ -35,6 +35,16 @@ std::unique_ptr<object> createCubeMesh(const Vector3D& pos, double size, const M
     tris.emplace_back(p000,p100,p101,mat);
     tris.emplace_back(p000,p101,p001,mat);
 
+    // Die Dreiecke sind um (0,0,0) erzeugt; Mesh zeichnet und rendert die Dreiecke direkt,
+    // daher hierher verschieben (vorher landete jeder Wuerfel im Ursprung)
+    for (auto& t : tris)
+    {
+        t.a += pos;
+        t.b += pos;
+        t.c += pos;
+        t.rebuild();
+    }
+
     return std::make_unique<Mesh>(tris, pos);
 }
 

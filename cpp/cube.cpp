@@ -127,10 +127,12 @@ void Cube::drawFlat(Wireframe& wf, DrawMode mode) const
 
         double intensity = std::max(0.0, N * L);
 
-        Farbe base =
-            (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
-            (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
-                                            mat.diffuse;
+        Farbe base = mat.diffuse;
+
+        if (mode == DrawMode::HIGHLIGHT)
+            base = invertColorHighlight(mat.diffuse);
+        else if (mode == DrawMode::HOVER)
+            base = invertColor(mat.diffuse);
 
         Farbe shaded(
             base.r * intensity,
@@ -160,9 +162,13 @@ void Cube::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     int x0,y0,x1,y1;
     double z0, z1;
     Material matHere = mat;
-    
+
     if (mode == DrawMode::HIGHLIGHT)
-    matHere = makeMaterialSimple(Farbe(1,1,0));
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
+    else if (mode == DrawMode::HOVER)
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
+    else
+        matHere = makeMaterialSimple(mat.diffuse);
 
     for(const auto& tri : tris)
     {

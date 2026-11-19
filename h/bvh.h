@@ -3,6 +3,32 @@
 #include "BVHNode.h"
 #include <vector>
 #include <algorithm>
+#include <mutex>
+
+extern bool rendernRunning;
+
+// Gibt einen mit buildBVH() erzeugten Baum frei und setzt den Zeiger auf nullptr.
+// Geloescht werden nur die BVHNode-Knoten (bei einem einzigen Objekt ist die Wurzel das Objekt
+// selbst). Laeuft gerade das Raytracing, wird erst spaeter freigegeben, weil die Render-Threads
+// den alten Baum evtl. noch durchlaufen (z.B. beim Verschieben eines Mesh waehrend des Renderns).
+inline void bvhFreigeben(object *&wurzel)
+{
+    static std::mutex sperre;
+    static std::vector<object *> spaeter;
+
+    std::lock_guard<std::mutex> lock(sperre);
+
+    if (dynamic_cast<BVHNode *>(wurzel))
+        spaeter.push_back(wurzel);
+    wurzel = nullptr;
+
+    if (rendernRunning)
+        return;
+
+    for (object *knoten : spaeter)
+        delete knoten;
+    spaeter.clear();
+}
 
 // Hilfsfunktion: Welt-AABB berechnen
 inline void computeBounds(object* obj, Vector3D& minB, Vector3D& maxB)
@@ -90,4 +116,4 @@ inline object* buildBVH(std::vector<object*>& objects)
     object* rightNode = buildBVH(right);
 
     return new BVHNode(leftNode, rightNode);
-}
+}

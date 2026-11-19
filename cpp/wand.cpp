@@ -92,11 +92,11 @@ void Wand::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));  // Gelb für selektiertes Objekt
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));  // Cyan für Hover
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
-        matHere = makeMaterialSimple(mat.diffuse);   // Standardfarbe
+        matHere = makeMaterialSimple(mat.diffuse);
 
     Vector3D a = t1.a + position;
     Vector3D b = t1.b + position;
@@ -116,7 +116,7 @@ void Wand::drawFlat(Wireframe& wf, DrawMode mode) const
     if (mode == DrawMode::HIGHLIGHT)
         matHere = makeMaterialSimple(Farbe(1,1,0));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
         matHere = makeMaterialSimple(mat.diffuse);*/
 
@@ -146,10 +146,12 @@ void Wand::drawFlat(Wireframe& wf, DrawMode mode) const
 
     double intensity = std::max(0.0, N * L);
 
-    Farbe base =
-        (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
-        (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
-                                        mat.diffuse;
+    Farbe base = mat.diffuse;
+
+    if (mode == DrawMode::HIGHLIGHT)
+        base = invertColorHighlight(mat.diffuse);
+    else if (mode == DrawMode::HOVER)
+        base = invertColor(mat.diffuse);
 
     Farbe shaded(
         base.r * intensity,

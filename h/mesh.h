@@ -12,6 +12,8 @@ public:
     //BVHNode* bvhRoot = nullptr;
     object* bvhRoot;
 
+    const wchar_t* getTypeName() const override{return L"Mesh";}
+
     std::vector<Dreieck> tris;
     Vector3D position;
 
@@ -42,6 +44,8 @@ public:
 
     virtual void setTexture(std::shared_ptr<Texture> tex) override;
     virtual void setTextureMode(TextureMode mode) override;
+    void texturBoxSetzen(); // Bezugsbox der Textur auf alle Dreiecke (Box des ganzen Mesh)
+    void texturNeuFestmachen(); // Ruhelage der Textur neu aus der jetzigen Lage (Textur haftet am Objekt)
     virtual void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int octaves);
     void recomputeTriangleDataAndMeshBounds();
     void recomputeMeshBoundsFromTriangles();

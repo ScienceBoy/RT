@@ -1,4 +1,5 @@
 #include "mesh_importer.h"
+#include "fortschritt.h"
 #include "mesh.h"
 #include "dreieck.h"
 #include "material.h"
@@ -10,7 +11,6 @@
 #include <memory>
 #include <algorithm>
 #include "scene.h"
-#include <filesystem>
 #include <future>
 #include <string>
 
@@ -35,24 +35,26 @@ struct MaterialInfo {
     std::string diffuseTexture = "";
 };
 
-#include <charconv>
+#include <cstdlib>
 
 inline void skipSpaces(const char*& p) {
     while (*p == ' ' || *p == '\t') ++p;
 }
 
 inline double parsedouble(const char*& p) {
-    double value = 0.0;
-    auto res = std::from_chars(p, p + 64, value);
-    p = res.ptr;
+    errno = 0;
+    char* endPtr = nullptr;
+    double value = std::strtod(p, &endPtr);
+    p = endPtr;
     return value;
 }
 
 inline int parseInt(const char*& p) {
-    int value = 0;
-    auto res = std::from_chars(p, p + 32, value);
-    p = res.ptr;
-    return value;
+    errno = 0;
+    char* endPtr = nullptr;
+    long value = std::strtol(p, &endPtr, 10);
+    p = endPtr;
+    return static_cast<int>(value);
 }
 
 inline void trimRange(const char*& start, const char*& end) {
@@ -317,18 +319,58 @@ std::unique_ptr<Mesh> MeshImporter::importOBJ_fast(
     std::vector<Vector3D> vertices;
     std::vector<Vector3D> normals;
     std::vector<Vector2D> uvs;
-    vertices.reserve(500000);
-    normals.reserve(500000);
-    uvs.reserve(500000);
-    mesh->triangles.reserve(1000000);
+    // Platz nach der tatsaechlichen Groesse der Datei reservieren (Zeilen zaehlen). Vorher fest 1 Million Dreiecke:
+    // ein Dreieck ist ~900 Bytes, das waren ~870 MB je geladenem Netz - schon wenige Netze in einer Szene
+    // ergaben beim Laden std::bad_alloc.
+    {
+        size_t nv = 0, nn = 0, nt = 0, nf = 0;
+        for (const char *q = ptr; q < end;)
+        {
+            if (q + 1 < end && q[0] == 'v')
+            {
+                if (q[1] == ' ' || q[1] == '\t')
+                    ++nv;
+                else if (q[1] == 'n')
+                    ++nn;
+                else if (q[1] == 't')
+                    ++nt;
+            }
+            else if (q + 1 < end && q[0] == 'f' && (q[1] == ' ' || q[1] == '\t'))
+                ++nf;
+            const void *nl = memchr(q, '\n', size_t(end - q));
+            if (!nl)
+                break;
+            q = static_cast<const char *>(nl) + 1;
+        }
+        vertices.reserve(nv);
+        normals.reserve(nn);
+        uvs.reserve(nt);
+        mesh->triangles.reserve(nf); // Dreiecke; Vierecke usw. erweitern bei Bedarf
+    }
 
     //std::unordered_map<std::string_view, MaterialInfo> materials;
     std::unordered_map<std::string, MaterialInfo> materials;
     MaterialInfo currentMat;
 
-    std::filesystem::path objDir = std::filesystem::path(filename).parent_path();
+    std::string objDir = filename;
+    const size_t lastSlash = objDir.find_last_of("/\\");
+    if (lastSlash != std::string::npos)
+        objDir = objDir.substr(0, lastSlash + 1);
+    else
+        objDir.clear();
 
+    std::string objektName;  // aus "o name"
+    std::string gruppenName; // aus "g name"
+
+    fortschritt::Abschnitt fortschrittObj(L"OBJ-Datei lesen");
+    const char *const anfang = ptr;
+    const char *naechsteMeldung = ptr;
     while (ptr < end) {
+        if (ptr >= naechsteMeldung) // etwa alle 512 KB
+        {
+            fortschritt::melden(double(ptr - anfang) / double(std::max<ptrdiff_t>(1, end - anfang)), L"OBJ-Datei lesen");
+            naechsteMeldung = ptr + (1 << 19);
+        }
         // nächste Zeile
         const char* lineStart = ptr;
 
@@ -405,11 +447,25 @@ std::unique_ptr<Mesh> MeshImporter::importOBJ_fast(
             // Slash normalisieren
             std::replace(mtlFile.begin(), mtlFile.end(), '\\', '/');
 
-            auto full = (objDir / mtlFile).string();
+            std::string full = objDir;
+            if (!full.empty() && full.back() != '/' && full.back() != '\\')
+                full += '/';
+            full += mtlFile;
             auto mtl = loadMTL(full);
             currentMatName = full;
 
             materials.insert(mtl.begin(), mtl.end());
+        }
+
+        // --- Objekt- bzw. Gruppenname (erster "o", sonst erster "g") ---
+        else if ((p[0] == 'o' || p[0] == 'g') && (p[1] == ' ' || p[1] == '\t')) {
+            const char* nameStart = p + 2;
+            const char* nameEnd = effectiveEnd;
+            trimRange(nameStart, nameEnd);
+
+            std::string name(nameStart, nameEnd - nameStart);
+            if (!name.empty() && (p[0] == 'o' ? objektName.empty() : gruppenName.empty()))
+                (p[0] == 'o' ? objektName : gruppenName) = name;
         }
 
         // --- usemtl ---
@@ -595,6 +651,21 @@ std::unique_ptr<Mesh> MeshImporter::importOBJ_fast(
         mesh->boundingCenter = 0.5 * (mesh->minBound + mesh->maxBound);
         mesh->boundingRadius = (mesh->maxBound - mesh->boundingCenter).length();
     }
+
+    // --- Name: "o", sonst "g", sonst Dateiname ohne Verzeichnis und Endung ---
+    if (!objektName.empty())
+        mesh->name = objektName;
+    else if (!gruppenName.empty() && gruppenName != "default")
+        mesh->name = gruppenName;
+    else
+    {
+        std::string datei = (lastSlash != std::string::npos) ? filename.substr(lastSlash + 1) : filename;
+        const size_t punkt = datei.find_last_of('.');
+        mesh->name = (punkt != std::string::npos && punkt > 0) ? datei.substr(0, punkt) : datei;
+    }
+
+    // ueberzaehligen Platz freigeben (vor dem BVH, der auf die Dreiecke zeigt)
+    mesh->triangles.shrink_to_fit();
 
     // BVH
     //auto future = std::async(std::launch::async, [&]{

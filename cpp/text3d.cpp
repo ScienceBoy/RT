@@ -3,6 +3,8 @@
 #include "camera.h"
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include "rotations.h"
 #include "mesh_factory.h"
 #include "mesh.h"
 
@@ -21,108 +23,330 @@ Text3D::Text3D(const std::string& text,
       depth(depth)
 {
     position = pos;
+    name = text;
 
     buildFont();
     buildText();
+    grenzenBerechnen();
+}
 
-    // ========================================
-    // Bounding Sphere berechnen
-    // ========================================
-
-    boundingCenter = Vector3D(0,0,0);
-
-    int count = 0;
-
-    for(const auto& tri : tris)
+// Bounding-Box in Weltkoordinaten, Bounding-Sphere (fuer Picking und Raytracing)
+void Text3D::grenzenBerechnen()
+{
+    if (tris.empty())
     {
-        boundingCenter += tri.a;
-        boundingCenter += tri.b;
-        boundingCenter += tri.c;
-
-        count += 3;
+        minBound = maxBound = boundingCenter = position;
+        boundingRadius = 0.0;
+        return;
     }
 
-    if(count > 0)
-        boundingCenter *= (1.0 / count);
-
-    boundingRadius = 0.0;
-
-    for(const auto& tri : tris)
+    Vector3D lmin = tris[0].a, lmax = tris[0].a;
+    auto erweitern = [&](const Vector3D& p)
     {
-        boundingRadius =
-            std::max(
-                boundingRadius,
-                (tri.a - boundingCenter).length());
-
-        boundingRadius =
-            std::max(
-                boundingRadius,
-                (tri.b - boundingCenter).length());
-
-        boundingRadius =
-            std::max(
-                boundingRadius,
-                (tri.c - boundingCenter).length());
+        lmin = Vector3D(std::min(lmin.x, p.x), std::min(lmin.y, p.y), std::min(lmin.z, p.z));
+        lmax = Vector3D(std::max(lmax.x, p.x), std::max(lmax.y, p.y), std::max(lmax.z, p.z));
+    };
+    for (const auto& tri : tris)
+    {
+        erweitern(tri.a);
+        erweitern(tri.b);
+        erweitern(tri.c);
     }
+
+    minBound = position + lmin;
+    maxBound = position + lmax;
+    boundingCenter = (minBound + maxBound) * 0.5;
+    boundingRadius = (lmax - lmin).length() * 0.5;
+}
+
+void Text3D::setText(const std::string& neuerText)
+{
+    text = neuerText;
+    name = text;
+    buildText();
+    grenzenBerechnen();
+}
+
+void Text3D::setAchsen(const Vector3D& x, const Vector3D& y, const Vector3D& z)
+{
+    achseX = x;
+    achseY = y;
+    achseZ = z;
+    buildText();
+    grenzenBerechnen();
+}
+
+void Text3D::rotate(const Vector3D& rotation)
+{
+    Vector3D mitte = (minBound + maxBound) * 0.5;
+
+    double rx = rotation.x * M_PI / 180.0;
+    double ry = rotation.y * M_PI / 180.0;
+    double rz = rotation.z * M_PI / 180.0;
+
+    auto rotP = [&](Vector3D p)
+    {
+        p = rotateX(p, rx);
+        p = rotateY(p, ry);
+        p = rotateZ(p, rz);
+        return p;
+    };
+
+    position = mitte + rotP(position - mitte);
+    setAchsen(rotP(achseX), rotP(achseY), rotP(achseZ));
+}
+
+void Text3D::scale(const Vector3D& scaleVec)
+{
+    Vector3D mitte = (minBound + maxBound) * 0.5;
+
+    auto sclP = [&](const Vector3D& p)
+    {
+        return Vector3D(p.x * scaleVec.x, p.y * scaleVec.y, p.z * scaleVec.z);
+    };
+
+    position = mitte + sclP(position - mitte);
+    setAchsen(sclP(achseX), sclP(achseY), sclP(achseZ));
+}
+
+void Text3D::setMaterial(const Material& m)
+{
+    mat = m;
+    for (auto& t : tris)
+        t.mat = m;
+}
+
+void Text3D::setFarbe(const Farbe& f)
+{
+    mat.diffuse = f;
+    for (auto& t : tris)
+        t.mat.diffuse = f;
 }
 
 // ============================================================
-// GLYPH GENERATION
+// SCHRIFT: 5x7-Pixelschrift (Kleinbuchstaben mit Unterlaenge bis 9 Zeilen)
+// '#' = Pixel. Zeile 0 oben, Zeilen 7 und 8 liegen unter der Grundlinie.
+// Benachbarte Pixel werden zu Rechtecken zusammengefasst (weniger Kanten und Dreiecke).
 // ============================================================
 
-Glyph Text3D::makeGlyph(char c, double s)
+namespace
+{
+struct SchriftZeichen
+{
+    int zeichen; // Unicode (Latin-1 genuegt: Umlaute, ß)
+    const char *zeilen[9];
+};
+
+const SchriftZeichen SCHRIFT[] = {
+    {'A', {".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"}},
+    {'B', {"####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."}},
+    {'C', {".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."}},
+    {'D', {"###..", "#..#.", "#...#", "#...#", "#...#", "#..#.", "###.."}},
+    {'E', {"#####", "#....", "#....", "####.", "#....", "#....", "#####"}},
+    {'F', {"#####", "#....", "#....", "####.", "#....", "#....", "#...."}},
+    {'G', {".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####"}},
+    {'H', {"#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"}},
+    {'I', {"###", ".#.", ".#.", ".#.", ".#.", ".#.", "###"}},
+    {'J', {"..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##.."}},
+    {'K', {"#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"}},
+    {'L', {"#....", "#....", "#....", "#....", "#....", "#....", "#####"}},
+    {'M', {"#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"}},
+    {'N', {"#...#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"}},
+    {'O', {".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."}},
+    {'P', {"####.", "#...#", "#...#", "####.", "#....", "#....", "#...."}},
+    {'Q', {".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"}},
+    {'R', {"####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"}},
+    {'S', {".####", "#....", "#....", ".###.", "....#", "....#", "####."}},
+    {'T', {"#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."}},
+    {'U', {"#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."}},
+    {'V', {"#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."}},
+    {'W', {"#...#", "#...#", "#...#", "#.#.#", "#.#.#", "#.#.#", ".#.#."}},
+    {'X', {"#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#"}},
+    {'Y', {"#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."}},
+    {'Z', {"#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"}},
+
+    {'a', {".....", ".....", ".###.", "....#", ".####", "#...#", ".####"}},
+    {'b', {"#....", "#....", "#.##.", "##..#", "#...#", "#...#", "####."}},
+    {'c', {".....", ".....", ".###.", "#....", "#....", "#...#", ".###."}},
+    {'d', {"....#", "....#", ".##.#", "#..##", "#...#", "#...#", ".####"}},
+    {'e', {".....", ".....", ".###.", "#...#", "#####", "#....", ".###."}},
+    {'f', {"..##", ".#..", ".#..", "###.", ".#..", ".#..", ".#.."}},
+    {'g', {".....", ".....", ".####", "#...#", "#...#", "#...#", ".####", "....#", ".###."}},
+    {'h', {"#....", "#....", "#.##.", "##..#", "#...#", "#...#", "#...#"}},
+    {'i', {".#.", "...", "##.", ".#.", ".#.", ".#.", "###"}},
+    {'j', {"..#", "...", ".##", "..#", "..#", "..#", "..#", "#.#", ".#."}},
+    {'k', {"#...", "#...", "#..#", "#.#.", "##..", "#.#.", "#..#"}},
+    {'l', {"##.", ".#.", ".#.", ".#.", ".#.", ".#.", "###"}},
+    {'m', {".....", ".....", "##.#.", "#.#.#", "#.#.#", "#...#", "#...#"}},
+    {'n', {".....", ".....", "#.##.", "##..#", "#...#", "#...#", "#...#"}},
+    {'o', {".....", ".....", ".###.", "#...#", "#...#", "#...#", ".###."}},
+    {'p', {".....", ".....", "####.", "#...#", "#...#", "#...#", "####.", "#....", "#...."}},
+    {'q', {".....", ".....", ".####", "#...#", "#...#", "#...#", ".####", "....#", "....#"}},
+    {'r', {".....", ".....", "#.##.", "##..#", "#....", "#....", "#...."}},
+    {'s', {".....", ".....", ".###.", "#....", ".###.", "....#", "####."}},
+    {'t', {".#..", ".#..", "###.", ".#..", ".#..", ".#.#", "..#."}},
+    {'u', {".....", ".....", "#...#", "#...#", "#...#", "#..##", ".##.#"}},
+    {'v', {".....", ".....", "#...#", "#...#", "#...#", ".#.#.", "..#.."}},
+    {'w', {".....", ".....", "#...#", "#...#", "#.#.#", "#.#.#", ".#.#."}},
+    {'x', {".....", ".....", "#...#", ".#.#.", "..#..", ".#.#.", "#...#"}},
+    {'y', {".....", ".....", "#...#", "#...#", "#...#", "#...#", ".####", "....#", ".###."}},
+    {'z', {".....", ".....", "#####", "...#.", "..#..", ".#...", "#####"}},
+
+    {'0', {".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."}},
+    {'1', {"..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."}},
+    {'2', {".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"}},
+    {'3', {"#####", "...#.", "..#..", "...#.", "....#", "#...#", ".###."}},
+    {'4', {"...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."}},
+    {'5', {"#####", "#....", "####.", "....#", "....#", "#...#", ".###."}},
+    {'6', {"..##.", ".#...", "#....", "####.", "#...#", "#...#", ".###."}},
+    {'7', {"#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."}},
+    {'8', {".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."}},
+    {'9', {".###.", "#...#", "#...#", ".####", "....#", "...#.", ".##.."}},
+
+    {'.', {"..", "..", "..", "..", "..", "##", "##"}},
+    {',', {"..", "..", "..", "..", "..", "##", "##", ".#", "#."}},
+    {'!', {"#", "#", "#", "#", "#", ".", "#"}},
+    {'?', {".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#.."}},
+    {'-', {"....", "....", "....", "####", "....", "....", "...."}},
+    {'+', {".....", "..#..", "..#..", "#####", "..#..", "..#..", "....."}},
+    {':', {"..", "##", "##", "..", "##", "##", ".."}},
+    {';', {"..", "##", "##", "..", "##", "##", ".#", "#."}},
+    {'(', {"..#", ".#.", "#..", "#..", "#..", ".#.", "..#"}},
+    {')', {"#..", ".#.", "..#", "..#", "..#", ".#.", "#.."}},
+    {'/', {".....", "....#", "...#.", "..#..", ".#...", "#....", "....."}},
+    {'\'', {"#", "#", ".", ".", ".", ".", "."}},
+    {'"', {"#.#", "#.#", "...", "...", "...", "...", "..."}},
+    {'=', {".....", ".....", "#####", ".....", "#####", ".....", "....."}},
+    {'_', {".....", ".....", ".....", ".....", ".....", ".....", "#####"}},
+    {'*', {".....", "..#..", "#.#.#", ".###.", "#.#.#", "..#..", "....."}},
+    {'#', {".#.#.", ".#.#.", "#####", ".#.#.", "#####", ".#.#.", ".#.#."}},
+    {'%', {"##...", "##..#", "...#.", "..#..", ".#...", "#..##", "...##"}},
+    {'&', {".##..", "#..#.", "#.#..", ".#...", "#.#.#", "#..#.", ".##.#"}},
+    {'@', {".###.", "#...#", "....#", ".##.#", "#.#.#", "#.#.#", ".###."}},
+    {'<', {"...#", "..#.", ".#..", "#...", ".#..", "..#.", "...#"}},
+    {'>', {"#...", ".#..", "..#.", "...#", "..#.", ".#..", "#..."}},
+
+    {0xC4, {"#...#", ".###.", "#...#", "#...#", "#####", "#...#", "#...#"}}, // Ä
+    {0xD6, {"#...#", ".###.", "#...#", "#...#", "#...#", "#...#", ".###."}}, // Ö
+    {0xDC, {"#...#", ".....", "#...#", "#...#", "#...#", "#...#", ".###."}}, // Ü
+    {0xE4, {".#.#.", ".....", ".###.", "....#", ".####", "#...#", ".####"}}, // ä
+    {0xF6, {".#.#.", ".....", ".###.", "#...#", "#...#", "#...#", ".###."}}, // ö
+    {0xFC, {".#.#.", ".....", "#...#", "#...#", "#...#", "#..##", ".##.#"}}, // ü
+    {0xDF, {".##..", "#..#.", "#..#.", "#.##.", "#...#", "#...#", "#.##."}}, // ß
+};
+
+const double PIXEL = 1.0 / 7.0;  // Hoehe eines Pixels in "size" (Grossbuchstaben = 7 Pixel = size)
+const double ABSTAND = 1.0 / 7.0; // ein Pixel Abstand zwischen Zeichen
+const double LEERZEICHEN = 3.0 / 7.0;
+
+// UTF-8 in Zeichen zerlegen (1- und 2-Byte-Folgen; alles andere wird uebersprungen)
+std::vector<int> zeichenAus(const std::string &text)
+{
+    std::vector<int> v;
+    for (size_t i = 0; i < text.size(); ++i)
+    {
+        unsigned char c = (unsigned char)text[i];
+        if (c < 0x80)
+            v.push_back(c);
+        else if ((c & 0xE0) == 0xC0 && i + 1 < text.size())
+        {
+            v.push_back(((c & 0x1F) << 6) | ((unsigned char)text[i + 1] & 0x3F));
+            ++i;
+        }
+        else if ((c & 0xF0) == 0xE0)
+            i += 2;
+        else if ((c & 0xF8) == 0xF0)
+            i += 3;
+    }
+    return v;
+}
+} // namespace
+
+// Pixelbild -> Rechtecke: waagrechte Laeufe je Zeile, gleiche Laeufe in Folgezeilen zusammengelegt
+Glyph Text3D::makeGlyph(int c)
 {
     Glyph g;
+    const SchriftZeichen *z = nullptr;
+    for (const auto &s : SCHRIFT)
+        if (s.zeichen == c)
+            z = &s;
+    if (!z)
+        return g;
 
-    switch(std::toupper(static_cast<unsigned char>(c)))
+    // benutzte Spalten (Zeichen ohne Rand links/rechts: schmale Zeichen wie i, l, . sind schmal)
+    int links = 99, rechts = -1;
+    for (const char *zeile : z->zeilen)
+        if (zeile)
+            for (int x = 0; zeile[x]; ++x)
+                if (zeile[x] == '#')
+                {
+                    links = std::min(links, x);
+                    rechts = std::max(rechts, x);
+                }
+    if (rechts < 0)
+        return g;
+    g.breite = (rechts - links + 1) * PIXEL;
+
+    struct Lauf
     {
-        case 'A': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0.8,0.8,1},{0.2,0.45,0.8,0.6}}; break;
-        case 'B': g.rects={{0,0,0.2,1},{0.2,0.8,0.8,1},{0.2,0.4,0.8,0.6},{0.2,0,0.8,0.2},{0.8,0.6,1,0.8},{0.8,0.2,1,0.4}}; break;
-        case 'C': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0,1,0.2}}; break;
-        case 'D': g.rects={{0,0,0.2,1},{0.2,0.8,0.8,1},{0.2,0,0.8,0.2},{0.8,0.2,1,0.8}}; break;
-        case 'E': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0.4,0.8,0.6},{0.2,0,1,0.2}}; break;
-        case 'F': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0.4,0.8,0.6}}; break;
-        case 'G': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0,1,0.2},{0.8,0,1,0.6},{0.5,0.4,1,0.6}}; break;
-        case 'H': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0.4,0.8,0.6}}; break;
-        case 'I': g.rects={{0,0.8,1,1},{0.4,0,0.6,1},{0,0,1,0.2}}; break;
-        case 'J': g.rects={{0,0.8,1,1},{0.4,0,0.6,1},{0,0,0.5,0.2},{0,0,0.2,0.4}}; break;
-        case 'K': g.rects={{0,0,0.2,1},{0.2,0.4,1,0.6},{0.6,0.6,1,1},{0.6,0,1,0.4}}; break;
-        case 'L': g.rects={{0,0,0.2,1},{0.2,0,1,0.2}}; break;
-        case 'M': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.35,0.5,0.5,1},{0.5,0.5,0.65,1}}; break;
-        case 'N': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0.4,0.8,0.6}}; break;
-        case 'O': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0.8,0.8,1},{0.2,0,0.8,0.2}}; break;
-        case 'P': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0.4,1,0.6},{0.8,0.6,1,0.8}}; break;
-        case 'Q': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0.8,0.8,1},{0.2,0,0.8,0.2},{0.6,0,1,0.4}}; break;
-        case 'R': g.rects={{0,0,0.2,1},{0.2,0.8,1,1},{0.2,0.4,1,0.6},{0.8,0.6,1,0.8},{0.6,0,1,0.4}}; break;
-        case 'S': g.rects={{0,0.8,1,1},{0,0.4,0.2,0.8},{0,0.4,1,0.6},{0.8,0,1,0.4},{0,0,1,0.2}}; break;
-        case 'T': g.rects={{0,0.8,1,1},{0.4,0,0.6,0.8}}; break;
-        case 'U': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.2,0,0.8,0.2}}; break;
-        case 'V': g.rects={{0,0.4,0.2,1},{0.8,0.4,1,1},{0.4,0,0.6,0.5}}; break;
-        case 'W': g.rects={{0,0,0.2,1},{0.8,0,1,1},{0.3,0,0.45,0.5},{0.55,0,0.7,0.5}}; break;
-        case 'X': g.rects={{0,0,0.2,0.4},{0,0.6,0.2,1},{0.8,0,1,0.4},{0.8,0.6,1,1},{0.35,0.35,0.65,0.65}}; break;
-        case 'Y': g.rects={{0,0.6,0.2,1},{0.8,0.6,1,1},{0.4,0,0.6,0.7},{0.2,0.4,0.8,0.6}}; break;
-        case 'Z': g.rects={{0,0.8,1,1},{0,0,1,0.2},{0.2,0.4,0.8,0.6}}; break;
-        case ' ': default: break;
-    }
+        int x0, x1, zeileOben, zeileUnten;
+    };
+    std::vector<Lauf> offen, fertig;
 
+    for (int zeile = 0; zeile < 9; ++zeile)
+    {
+        std::vector<Lauf> neu;
+        const char *text = z->zeilen[zeile];
+        if (text)
+            for (int x = 0; text[x];)
+            {
+                if (text[x] != '#')
+                {
+                    ++x;
+                    continue;
+                }
+                int start = x;
+                while (text[x] == '#')
+                    ++x;
+                neu.push_back({start, x, zeile, zeile});
+            }
+
+        // Lauf mit gleichen Spalten wie in der Zeile darueber: verlaengern
+        for (auto &n : neu)
+            for (auto it = offen.begin(); it != offen.end(); ++it)
+                if (it->x0 == n.x0 && it->x1 == n.x1)
+                {
+                    n.zeileOben = it->zeileOben;
+                    offen.erase(it);
+                    break;
+                }
+        fertig.insert(fertig.end(), offen.begin(), offen.end());
+        offen = neu;
+    }
+    fertig.insert(fertig.end(), offen.begin(), offen.end());
+
+    for (const auto &l : fertig)
+    {
+        // Zeile 0 oben an der Versalhoehe, Zeile 6 auf der Grundlinie, 7 und 8 darunter
+        Rect2D r;
+        r.x0 = (l.x0 - links) * PIXEL;
+        r.x1 = (l.x1 - links) * PIXEL;
+        r.y0 = (6 - l.zeileUnten) * PIXEL;
+        r.y1 = (7 - l.zeileOben) * PIXEL;
+        g.rects.push_back(r);
+    }
     return g;
 }
 
 // ============================================================
-// FONT BUILD
+// FONT
 // ============================================================
 
 void Text3D::buildFont()
 {
     font.clear();
-
-    std::string chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
-
-    for(char c : chars)
-    {
-        font[c] = makeGlyph(c, size);
-    }
+    for (const auto &s : SCHRIFT)
+        font[s.zeichen] = makeGlyph(s.zeichen);
 }
 
 // ============================================================
@@ -133,41 +357,37 @@ void Text3D::buildText()
 {
     tris.clear();
 
-    double spacing = size * 1.2;
-
-    for(size_t i = 0; i < text.size(); i++)
+    double x = 0.0;
+    for (int c : zeichenAus(text))
     {
-        Vector3D offset(
-            i * spacing,
-            0,
-            0);
-
-        addGlyphMesh(text[i], offset);
+        if (c == ' ')
+        {
+            x += LEERZEICHEN * size;
+            continue;
+        }
+        double breite = addGlyphMesh(c, Vector3D(x, 0, 0));
+        x += (breite + ABSTAND) * size;
     }
 }
 
 // ============================================================
-// GLYPH → MESH
+// GLYPH → MESH (unbekannte Zeichen als Fragezeichen); liefert die Breite in "size"
 // ============================================================
 
-void Text3D::addGlyphMesh(
-    char c,
-    const Vector3D& offset)
+double Text3D::addGlyphMesh(int c, const Vector3D &offset)
 {
-    char key =
-        std::toupper(
-            static_cast<unsigned char>(c));
-
-    auto it = font.find(key);
-
-    if(it == font.end())
-        return;
+    auto it = font.find(c);
+    if (it == font.end())
+        it = font.find('?');
+    if (it == font.end())
+        return 0.0;
 
     extrudeGlyph(it->second, offset);
+    return it->second.breite;
 }
 
 // ============================================================
-// GLYPH EXTRUSION VIA createWall()
+// GLYPH EXTRUSION: Quader je Rechteck (gleiche Form wie createWall)
 // ============================================================
 
 void Text3D::extrudeGlyph(
@@ -201,14 +421,27 @@ void Text3D::extrudeGlyph(
         c += offset;
         d += offset;
 
-        scene.push_back(createWall(
-            a,
-            b,
-            c,
-            d,
-            mat,
-            50
-        ));
+        Vector3D versatz(0, 0, depth);
+        Vector3D a2 = a + versatz, b2 = b + versatz, c2 = c + versatz, d2 = d + versatz;
+
+        // Textkoordinaten -> lokale Koordinaten ueber die (gedrehten/skalierten) Achsen
+        auto lokal = [&](const Vector3D& p)
+        {
+            return achseX * p.x + achseY * p.y + achseZ * p.z;
+        };
+
+        auto viereck = [&](const Vector3D& p, const Vector3D& q, const Vector3D& r, const Vector3D& s)
+        {
+            tris.emplace_back(lokal(p), lokal(q), lokal(r), mat);
+            tris.emplace_back(lokal(p), lokal(r), lokal(s), mat);
+        };
+
+        viereck(a, b, c, d);     // vorne
+        viereck(a2, d2, c2, b2); // hinten
+        viereck(a, a2, b2, b);   // unten
+        viereck(b, b2, c2, c);   // rechts
+        viereck(c, c2, d2, d);   // oben
+        viereck(d, d2, a2, a);   // links
     }
 }
 
@@ -268,11 +501,11 @@ void Text3D::drawFlat(Wireframe& wf, DrawMode mode) const
 
     // Material je nach DrawMode
     /*if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));  // Gelb
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));  // Cyan
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
-        matHere = makeMaterialSimple(mat.diffuse);   // Standardfarbe
+        matHere = makeMaterialSimple(mat.diffuse);
 
     */
 
@@ -302,10 +535,12 @@ void Text3D::drawFlat(Wireframe& wf, DrawMode mode) const
 
         double intensity = std::max(0.0, N * L);
 
-        Farbe base =
-            (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
-            (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
-                                            mat.diffuse;
+        Farbe base = mat.diffuse;
+
+        if (mode == DrawMode::HIGHLIGHT)
+            base = invertColorHighlight(mat.diffuse);
+        else if (mode == DrawMode::HOVER)
+            base = invertColor(mat.diffuse);
 
         Farbe shaded(
             base.r * intensity,
@@ -342,11 +577,11 @@ void Text3D::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));  // Gelb für selektiertes Objekt
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));  // Cyan für Hover
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
-        matHere = makeMaterialSimple(mat.diffuse);         // Standardfarbe
+        matHere = makeMaterialSimple(mat.diffuse);
 
     for(const auto& tri : tris)
     {
@@ -398,4 +633,4 @@ void Text3D::getWorldAABB(Vector3D& minOut, Vector3D& maxOut) const
         expand(t.b + position);
         expand(t.c + position);
     }
-}
+}

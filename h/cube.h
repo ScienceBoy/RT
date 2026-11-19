@@ -9,6 +9,7 @@ class Cube : public object
 {
 public:
     Cube();
+    const wchar_t* getTypeName() const override{return L"Cube";}
     //Cube(const Vector3D& center, double size, const Farbe& f);
     Cube(const Vector3D& center, double size, const Material& mat);
 

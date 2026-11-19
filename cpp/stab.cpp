@@ -2,6 +2,7 @@
 #include "wireframe.h"
 #include "camera.h"
 #include <cmath>
+#include "rotations.h"
 
 Stab::Stab()
     : object(Material()), p1(0,0,0), p2(0,1,0), radius(0.1)
@@ -17,6 +18,12 @@ Stab::Stab(const Vector3D& a, const Vector3D& b, double r, const Material& mat)
     p1 = a - position;
     p2 = b - position;
 
+    grenzenBerechnen();
+}
+
+// Bounding-Sphere und AABB aus p1, p2, radius und position
+void Stab::grenzenBerechnen()
+{
     // Bounding Sphere (lokal → unabhängig von position)
     double halfLength = (p2 - p1).length() * 0.5;
     boundingRadius = halfLength + radius;
@@ -36,8 +43,36 @@ Stab::Stab(const Vector3D& a, const Vector3D& b, double r, const Material& mat)
         std::max(p1.z, p2.z) + radius
     );
 
-    minBound = position - minBound;
-    maxBound = position - maxBound;
+    // lokal -> Welt (vorher "position - minBound": Box gespiegelt, Stab nicht anklickbar)
+    minBound = position + minBound;
+    maxBound = position + maxBound;
+}
+
+void Stab::rotate(const Vector3D &rotation)
+{
+    double rx = rotation.x * M_PI / 180.0;
+    double ry = rotation.y * M_PI / 180.0;
+    double rz = rotation.z * M_PI / 180.0;
+
+    auto rotP = [&](Vector3D &p)
+    {
+        p = rotateX(p, rx);
+        p = rotateY(p, ry);
+        p = rotateZ(p, rz);
+    };
+
+    // p1/p2 sind relativ zur Mitte 'position'
+    rotP(p1);
+    rotP(p2);
+    grenzenBerechnen();
+}
+
+void Stab::scale(const Vector3D &scaleVec)
+{
+    p1 = Vector3D(p1.x * scaleVec.x, p1.y * scaleVec.y, p1.z * scaleVec.z);
+    p2 = Vector3D(p2.x * scaleVec.x, p2.y * scaleVec.y, p2.z * scaleVec.z);
+    radius *= (scaleVec.x + scaleVec.y + scaleVec.z) / 3.0;
+    grenzenBerechnen();
 }
 
 void Stab::intersect(const Ray& ray, Hit& hit) const
@@ -79,21 +114,29 @@ void Stab::intersect(const Ray& ray, Hit& hit) const
     // sortieren
     if (t0 > t1) std::swap(t0, t1);
 
-    // gültiges t wählen
-    double t = t0;
-
-    if (t < 1e-4)
-        t = t1;
-
-    if (t >= hit.t)
+    // gültiges t wählen: der nächste Schnittpunkt VOR dem Strahlanfang, der auf dem Stababschnitt liegt.
+    // Vorher: lagen beide Schnittpunkte hinter dem Strahlanfang, wurde t1 trotzdem genommen (negativ) und
+    // als naechster Treffer gemeldet. Ein Strahl, dessen Verlaengerung nach hinten durch einen Stab lief
+    // (z.B. Streustrahl von der Tischplatte nach oben, Tischbein darunter), "traf" so den Stab:
+    // dunkle Flecken in Form des Stabs im indirekten Licht und in Spiegelungen.
+    // Ausserdem: lag der vordere Schnittpunkt ausserhalb des Abschnitts, wurde der hintere nicht mehr geprueft.
+    double t = -1.0, h = 0.0;
+    Vector3D p;
+    for (double kandidat : {t0, t1})
+    {
+        if (kandidat < 1e-4 || kandidat >= hit.t)
+            continue;
+        Vector3D q = ray.origin + d * kandidat;
+        double hq = ((q - localP1) * ca) / ca_dot_ca; // Projektion auf die Achse (0..1 = auf dem Stab)
+        if (hq < 0.0 || hq > 1.0)
+            continue;
+        t = kandidat;
+        p = q;
+        h = hq;
+        break;
+    }
+    if (t < 0.0)
         return;
-
-    // Schnittpunkt
-    Vector3D p = ray.origin + d * t;
-
-    // Projektion auf Achse prüfen (ob innerhalb des Stabs)
-    double h = ((p - localP1) * ca) / ca_dot_ca;
-    if (h < 0.0 || h > 1.0) return;
 
     // Treffer setzen
     hit.hit = true;
@@ -187,13 +230,11 @@ void Stab::drawFlat(Wireframe& wf, DrawMode mode) const
         //Vector3D L = cam[0].position.normalized();
         double intensity = std::max(0.0, N * L);
 
-        Farbe base;
+        Farbe base = mat.diffuse;
         if (mode == DrawMode::HIGHLIGHT)
-            base = Farbe(1,1,0);
+            base = invertColorHighlight(mat.diffuse);
         else if (mode == DrawMode::HOVER)
-            base = Farbe(0,1,1);
-        else
-            base = mat.diffuse;
+            base = invertColor(mat.diffuse);
 
         Farbe shaded = Farbe(
             base.r * intensity,
@@ -207,7 +248,7 @@ void Stab::drawFlat(Wireframe& wf, DrawMode mode) const
         double z0,z1,z2,z3;
 
         wf.project(p0,x0,y0,z0);
-        wf.project(p1_,x1,y1,z0);
+        wf.project(p1_,x1,y1,z1);
         wf.project(p2_,x2,y2,z2);
         wf.project(p3,x3,y3,z3);
 
@@ -226,7 +267,11 @@ void Stab::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
+    else if (mode == DrawMode::HOVER)
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
+    else
+        matHere = makeMaterialSimple(mat.diffuse);
 
     for(int i=0;i<steps;i++)
     {
@@ -263,4 +308,4 @@ void Stab::getWorldAABB(Vector3D& minOut, Vector3D& maxOut) const
         std::max(a.y, b.y) + radius,
         std::max(a.z, b.z) + radius
     );
-}
+}

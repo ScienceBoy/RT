@@ -3,15 +3,26 @@
 #include <algorithm>
 #include "camera.h"
 #include <cmath>
+#include "rotations.h"
 
 // Konstruktor
 Pfeil::Pfeil(const Vector3D& start, const Vector3D& end, double thickness, const Material& mat)
     : object(mat)
 {
+    aufbauen(start, end, thickness);
+}
+
+// Dreiecke und Grenzen aus Start, Ende und Dicke (auch nach Drehen/Skalieren)
+void Pfeil::aufbauen(const Vector3D& start, const Vector3D& end, double thickness)
+{
+    tris.clear();
     position = start; // Weltposition
 
     Vector3D localStart(0,0,0);
     Vector3D localEnd = end - start; // lokal
+
+    endeLokal = localEnd;
+    dicke = thickness;
 
     Vector3D dir = localEnd.normalized();
     double length = localEnd.length();
@@ -63,18 +74,21 @@ Pfeil::Pfeil(const Vector3D& start, const Vector3D& end, double thickness, const
         maxBound.y = std::max(maxBound.y, p.y);
         maxBound.z = std::max(maxBound.z, p.z);
     };
-    minBound = position - minBound;
-    maxBound = position - maxBound;
-
+    // erst lokal aufspannen, dann in Weltkoordinaten verschieben
+    // (vorher "position - minBound" vor dem Aufspannen: Box gespiegelt, Pfeil nicht anklickbar)
     expand(localStart); expand(localEnd);
     expand(s1); expand(s2); expand(s3); expand(s4);
     expand(e1); expand(e2); expand(e3); expand(e4);
+
+    Vector3D lokaleMitte = (minBound + maxBound) * 0.5;
+    minBound = position + minBound;
+    maxBound = position + maxBound;
 
     boundingCenter = (minBound + maxBound) * 0.5;
     boundingRadius = 0.0;
     auto testPoint = [&](const Vector3D& p)
     {
-        double d = (p - boundingCenter).length();
+        double d = (p - lokaleMitte).length();
         if (d > boundingRadius) boundingRadius = d;
     };
 
@@ -82,6 +96,39 @@ Pfeil::Pfeil(const Vector3D& start, const Vector3D& end, double thickness, const
     testPoint(localEnd);
     testPoint(s1); testPoint(s2); testPoint(s3); testPoint(s4);
     testPoint(e1); testPoint(e2); testPoint(e3); testPoint(e4);
+}
+
+void Pfeil::rotate(const Vector3D &rotation)
+{
+    Vector3D mitte = (minBound + maxBound) * 0.5;
+
+    double rx = rotation.x * M_PI / 180.0;
+    double ry = rotation.y * M_PI / 180.0;
+    double rz = rotation.z * M_PI / 180.0;
+
+    auto rotP = [&](Vector3D p)
+    {
+        p -= mitte;
+        p = rotateX(p, rx);
+        p = rotateY(p, ry);
+        p = rotateZ(p, rz);
+        return p + mitte;
+    };
+
+    aufbauen(rotP(position), rotP(position + endeLokal), dicke);
+}
+
+void Pfeil::scale(const Vector3D &scaleVec)
+{
+    Vector3D mitte = (minBound + maxBound) * 0.5;
+
+    auto sclP = [&](Vector3D p)
+    {
+        p -= mitte;
+        return Vector3D(p.x * scaleVec.x, p.y * scaleVec.y, p.z * scaleVec.z) + mitte;
+    };
+
+    aufbauen(sclP(position), sclP(position + endeLokal), dicke * (scaleVec.x + scaleVec.y + scaleVec.z) / 3.0);
 }
 
 // Dreieck hinzufügen
@@ -130,11 +177,11 @@ void Pfeil::drawFlat(Wireframe& wf, DrawMode mode) const
     /*Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));  // Gelb
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));  // Cyan
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
-        matHere = makeMaterialSimple(mat.diffuse);   // Standard
+        matHere = makeMaterialSimple(mat.diffuse);
 
     */
 
@@ -163,10 +210,12 @@ void Pfeil::drawFlat(Wireframe& wf, DrawMode mode) const
 
         double intensity = std::max(0.0, N * L);
 
-        Farbe base =
-            (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
-            (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
-                                            mat.diffuse;
+        Farbe base = mat.diffuse;
+
+        if (mode == DrawMode::HIGHLIGHT)
+            base = invertColorHighlight(mat.diffuse);
+        else if (mode == DrawMode::HOVER)
+            base = invertColor(mat.diffuse);
 
         Farbe shaded(
             base.r * intensity,
@@ -199,11 +248,11 @@ void Pfeil::drawWireframePixels(Wireframe& wf, DrawMode mode) const
     Material matHere = mat;
 
     if (mode == DrawMode::HIGHLIGHT)
-        matHere = makeMaterialSimple(Farbe(1,1,0));  // Gelb für selektiertes Objekt
+        matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
     else if (mode == DrawMode::HOVER)
-        matHere = makeMaterialSimple(Farbe(0,1,1));  // Cyan für Hover
+        matHere = makeMaterialSimple(invertColor(mat.diffuse));
     else
-        matHere = makeMaterialSimple(mat.diffuse);         // Standardfarbe
+        matHere = makeMaterialSimple(mat.diffuse);
 
     for(const auto& tri : tris)
     {
@@ -239,4 +288,4 @@ void Pfeil::getWorldAABB(Vector3D& minOut, Vector3D& maxOut) const
         expand(t.b + position);
         expand(t.c + position);
     }
-}
+}

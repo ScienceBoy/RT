@@ -18,6 +18,12 @@ public:
     Vector2D uvA, uvB, uvC;
     bool hasVertexNormals;
     Vector3D shadingNormal;
+    // Textur haftet am Objekt: Lage der drei Ecken zum Zeitpunkt, als die Textur festgemacht wurde (relativ zur
+    // Mitte der damaligen Box; die Box steht dann in texturMin/texturMax). Ein Trefferpunkt wird ueber seine
+    // baryzentrischen Gewichte in diese Ruhelage umgerechnet - so dreht und bewegt sich die Textur mit.
+    float ruhe[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    bool ruheGesetzt = false;
+    const wchar_t* getTypeName() const override{return L"Dreieck";}
 
     // Konstruktoren
     Dreieck();
@@ -51,4 +57,6 @@ public:
     void rebuild();
     void computeNormal();
     void updateBounds();
-};
+    void drawSelected(Wireframe &wf) const;
+    void drawFlatWithOutline(Wireframe &wf, int outlineRadius) const;
+};

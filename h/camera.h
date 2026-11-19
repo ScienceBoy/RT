@@ -20,15 +20,18 @@ public:
     double yaw = 0;
     double pitch = 0;
 
-    Camera(const Vector3D& pos, const Vector3D& lookAt, double fovDeg, double aspect, const Vector3D& upVec = Vector3D(0,1,0));
+    Vector3D target; 
+    double distance; 
 
-    Ray makeRay(double x, double y, Fenster& f) const;
+    Camera(const Vector3D &pos, const Vector3D &lookAt, double fovDeg, double aspect, const Vector3D &upVec = Vector3D(0, 1, 0));
+
+    Ray makeRay(double x, double y, Fenster &f) const;
 
     void drawFlat(Wireframe &wf, DrawMode mode) const;
-    void drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL) const;
+    void drawWireframePixels(Wireframe &wf, DrawMode mode = DrawMode::NORMAL) const;
 
     void update();          // Basisvektoren neu berechnen
     void updateDirection(); // yaw/pitch → Blickrichtung
-    void setPosition(const Vector3D& pos);
+    void setPosition(const Vector3D &pos);
+    void updateOrbit();
 };
-

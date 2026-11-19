@@ -7,6 +7,8 @@ class BVHLeaf : public object {
 public:
     std::vector<object*> primitives;
 
+    const wchar_t* getTypeName() const override{return L"BVHLeaf";}
+
     BVHLeaf(const std::vector<object*>& prims)
         : object(Material()), primitives(prims) {}
 

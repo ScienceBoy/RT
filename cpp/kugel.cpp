@@ -1,7 +1,6 @@
 #include "kugel.h"
 #include "wireframe.h"
 #include <cmath>
-#include <numbers>
 #include <vector>
 #include <random>
 #include "camera.h"
@@ -167,10 +166,12 @@ void Kugel::drawFlat(Wireframe& wf, DrawMode mode) const
 
             double intensity = std::max(0.0, N * L);
 
-            Farbe base =
-                (mode == DrawMode::HIGHLIGHT) ? Farbe(1,1,0) :
-                (mode == DrawMode::HOVER)     ? Farbe(0,1,1) :
-                                                mat.diffuse;
+            Farbe base = mat.diffuse;
+
+            if (mode == DrawMode::HIGHLIGHT)
+                base = invertColorHighlight(mat.diffuse);
+            else if (mode == DrawMode::HOVER)
+                base = invertColor(mat.diffuse);
 
             Farbe shaded(
                 base.r * intensity,
@@ -217,7 +218,11 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
         Material matHere = mat;
 
         if (mode == DrawMode::HIGHLIGHT)
-            matHere = makeMaterialSimple(Farbe(1,1,0));
+            matHere = makeMaterialSimple(invertColorHighlight(mat.diffuse));
+        else if (mode == DrawMode::HOVER)
+            matHere = makeMaterialSimple(invertColor(mat.diffuse));
+        else
+            matHere = makeMaterialSimple(mat.diffuse);
 
         wf.project(p0,x0,y0,z0); wf.project(p1,x1,y1,z1);
         wf.drawLine(x0,y0,z0,x1,y1,z1,matHere);
@@ -232,9 +237,17 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
         Vector3D p0(position.x + radius*cos(a0), position.y + radius*sin(a0), position.z);
         Vector3D p1(position.x + radius*cos(a1), position.y + radius*sin(a1), position.z);
 
+        Material matHere = mat;
+        if (mode == DrawMode::HIGHLIGHT)
+            matHere = makeMaterialSimple(Farbe(1,1,0));
+        else if (mode == DrawMode::HOVER)
+            matHere = makeMaterialSimple(Farbe(0,1,1));
+        else
+            matHere = makeMaterialSimple(mat.diffuse);
+
         wf.project(p0,x0,y0,z0); 
         wf.project(p1,x1,y1,z1);
-        wf.drawLine(x0,y0,z0,x1,y1,z1,mat);
+        wf.drawLine(x0,y0,z0,x1,y1,z1,matHere);
     }
 
     // YZ-Ebene
@@ -246,8 +259,16 @@ void Kugel::drawWireframePixels(Wireframe& wf, DrawMode mode) const
         Vector3D p0(position.x, position.y + radius*cos(a0), position.z + radius*sin(a0));
         Vector3D p1(position.x, position.y + radius*cos(a1), position.z + radius*sin(a1));
 
+        Material matHere = mat;
+        if (mode == DrawMode::HIGHLIGHT)
+            matHere = makeMaterialSimple(Farbe(1,1,0));
+        else if (mode == DrawMode::HOVER)
+            matHere = makeMaterialSimple(Farbe(0,1,1));
+        else
+            matHere = makeMaterialSimple(mat.diffuse);
+
         wf.project(p0,x0,y0,z0); wf.project(p1,x1,y1,z1);
-        wf.drawLine(x0,y0,z0,x1,y1,z1,mat);
+        wf.drawLine(x0,y0,z0,x1,y1,z1,matHere);
     }
 }
 
@@ -335,7 +356,9 @@ void Kugel::rotate(const Vector3D& rotation)
 
 void Kugel::scale(const Vector3D& scaleVec)
 {
-    radius *= sqrt(scaleVec.x + scaleVec.y + scaleVec.z);
+    // Mittelwert (vorher sqrt der Summe: (1.1,1.1,1.1) ergab Faktor 1.8)
+    radius *= (scaleVec.x + scaleVec.y + scaleVec.z) / 3.0;
+    updateBounds(); // sonst passt die Bounding-Box (Picking, Raytracing) nicht mehr zum Radius
 }
 
 // öffentliche Funktion
@@ -357,4 +380,4 @@ std::vector<Kugel> generateWolkeAusKugeln(
     );
 
     return kugeln;
-}
+}

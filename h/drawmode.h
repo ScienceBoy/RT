@@ -4,5 +4,6 @@ enum class DrawMode {
     NORMAL,
     HIGHLIGHT,
     SELECTED,
-    HOVER
+    HOVER,
+    OUTLINE
 };

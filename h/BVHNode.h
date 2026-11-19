@@ -11,15 +11,21 @@ public:
     object* left = nullptr;
     object* right = nullptr;
 
+    const wchar_t* getTypeName() const override{return L"BVHNode";}
+
     Vector3D minBound;
     Vector3D maxBound;
 
     BVHNode(object* l, object* r);
 
+    // Nur Unterknoten gehoeren dem Baum. Die Blaetter (Dreiecke usw.) gehoeren dem Mesh/Tree;
+    // sie zu loeschen hat beim Leeren der Szene den Heap beschaedigt.
     virtual ~BVHNode()
     {
-        delete left;
-        delete right;
+        if (dynamic_cast<BVHNode *>(left))
+            delete left;
+        if (dynamic_cast<BVHNode *>(right))
+            delete right;
     }
 
     void getWorldAABB(Vector3D& min, Vector3D& max) const override

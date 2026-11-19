@@ -5,9 +5,46 @@
 #include <algorithm>
 #include <limits>
 
-Tree::Tree(const Vector3D& pos, const Vector3D& richtung, double laenge, double radiusHolz, int tiefe, double wkeitWeiteresGlied)
-: object(Material()), position(pos), bvhRoot(nullptr)
+// Material wie bisher (Holz/Blatt), nur die Farbe aus den Parametern
+static Material baumMaterial(const Farbe &farbe, double glanz)
 {
+    return Material(
+        Farbe(0.0, 0.0, 0.0), // ambient (Ka)
+        farbe,                // diffuse (Kd)
+        Farbe(glanz, glanz, glanz), // specular (Ks)
+        Farbe(0.0, 0.0, 0.0), // emission (Ke)
+        0.0,                  // kA
+        1.0,                  // kD
+        glanz > 0 ? 20.0 : 0.0, // shininess (Ns)
+        glanz,                // specularStrength
+        0.01,                 // reflection
+        0.0,                  // roughness
+        0.0,                  // IOR
+        0.0,                  // transparency
+        Farbe(0, 0, 0));      // absorption
+}
+
+Tree::Tree(const Vector3D& pos, const Vector3D& richtung, double laenge, double radiusHolz, int tiefe, double wkeitWeiteresGlied,
+           const BaumParameter& parameter)
+: object(Material()), position(pos), bvhRoot(nullptr), param(parameter)
+{
+    // unsinnige Eingaben abfangen (min > max usw.)
+    if (param.laengeMin > param.laengeMax) std::swap(param.laengeMin, param.laengeMax);
+    if (param.seitenMin > param.seitenMax) std::swap(param.seitenMin, param.seitenMax);
+    if (param.spitzeMin > param.spitzeMax) std::swap(param.spitzeMin, param.spitzeMax);
+    if (param.blattMin > param.blattMax) std::swap(param.blattMin, param.blattMax);
+    param.segmente = std::max(3, param.segmente);
+    param.dickenFaktor = std::clamp(param.dickenFaktor, 0.05, 0.99); // >= 1 wuerde nie enden
+    param.mindestDicke = std::max(param.mindestDicke, 1e-9);
+    param.seitenMin = std::max(0, param.seitenMin);
+    param.seitenLaenge = std::clamp(param.seitenLaenge, 0.01, 5.0);
+    if (param.zufall != 0)
+        srand(param.zufall); // gleicher Startwert = gleicher Baum
+
+    holzMaterial = baumMaterial(param.holzFarbe, 0.0);
+    blattMaterial = baumMaterial(param.blattFarbe, 0.0);
+    schneeMaterial = baumMaterial(param.schneeFarbe, 0.15);
+
     //woodTriangles.reserve(250000);
     //leaves.reserve(250000);
 
@@ -35,7 +72,7 @@ Tree::Tree(const Vector3D& pos, const Vector3D& richtung, double laenge, double 
 
 Tree::~Tree()
 {
-    delete bvhRoot;
+    bvhFreigeben(bvhRoot);
 
     //for (auto obj : bvhObjects)
     //    delete obj;
@@ -48,40 +85,24 @@ static inline void rebuildTri(Dreieck& tri)
 
 void Tree::build(const Vector3D& pos, const Vector3D& dir, double len, double radiusHolz, int depth, double wkeitWeiteresGlied)
 {
-    if (depth <= 0 || radiusHolz < 0.01)
+    if (depth <= 0 || radiusHolz < param.mindestDicke)
         return;
 
     Vector3D end = pos + dir * len;
 
-    Material wood = Material(
-        Farbe(0.0, 0.0, 0.0),      // ambient (Ka)
-        Farbe(0.36, 0.22, 0.12),   // diffuse (Kd)
-        Farbe(0.0, 0.0, 0.0),      // specular (Ks)
-        Farbe(0.0, 0.0, 0.0),      // emission (Ke)
-
-        0.0,   // kA
-        1.0,   // kD
-        0.0,  // shininess (Ns)
-        0.0,   // specularStrength (optional aus Ks ableitbar)
-
-        0.01,   // reflection
-        0.0,   // roughness (nicht aus MTL ableitbar)
-        0.0,   // IOR (Ni)
-        0.0,   // transparency (d = 1 → opaque)
-        Farbe(0,0,0) // absorption
-    );
     // =====================================================
-    // 🌲 STAB statt Triangles
+    // 🌲 Ast aus Dreiecken (Radius am Ende zufaellig kleiner)
     // =====================================================
-
-    //stabs.emplace_back(pos, end, radiusHolz, wood);
-    addBranchMesh(pos, end, radiusHolz, 8, wood);
+    const double radiusEnde = radiusHolz * randRange(param.spitzeMin, param.spitzeMax);
+    addBranchMesh(pos, end, radiusHolz, radiusEnde, param.segmente, holzMaterial);
+    if (param.schnee > 0.0)
+        addSchnee(pos, end, radiusHolz, radiusEnde);
 
     // =====================================================
     // 🍃 Blätter
     // =====================================================
 
-    if (depth <= 2)
+    if (depth <= param.blattStufen)
     {
         Vector3D surfacePoint = end;
 
@@ -106,11 +127,11 @@ void Tree::build(const Vector3D& pos, const Vector3D& dir, double len, double ra
             + radialOffset
             + dir * forward;
 
-        int density = (int)std::max(1.0, pow(radiusHolz, 1.5) * 50.0);
+        int density = (int)std::max(1.0, pow(radiusHolz, 1.5) * param.blattDichte);
 
-        for (int i = 0; i < density*3; i++)
+        for (int i = 0; i < density * param.blattBueschel; i++)
         {
-            Vector3D offset = randomInSphere() * 0.1;
+            Vector3D offset = randomInSphere() * param.blattStreuung;
             addLeaf(leafPos + offset, dir);
         }
     }
@@ -120,18 +141,18 @@ void Tree::build(const Vector3D& pos, const Vector3D& dir, double len, double ra
     // =====================================================
 
     Vector3D newDir = dir;
-    newDir.x += randRange(-0.3, 0.3);
+    newDir.x += randRange(-param.streuungHaupt, param.streuungHaupt);
     newDir.y += randRange(-0.1, 0.4);
-    newDir.z += randRange(-0.3, 0.3);
-    newDir.y *= 0.7;    // WACHSTUMS- “Gravity”
+    newDir.z += randRange(-param.streuungHaupt, param.streuungHaupt);
+    newDir.y *= param.schwereHaupt;    // WACHSTUMS- “Gravity”
     newDir.normalize();
 
     if (randRange(0.0, 1.0) < wkeitWeiteresGlied)
     {
         build(end,
               newDir,
-              len * randRange(0.75, 0.9),
-              radiusHolz * 0.65,
+              len * randRange(param.laengeMin, param.laengeMax),
+              radiusHolz * param.dickenFaktor,
               depth - 1,
               wkeitWeiteresGlied);
     }
@@ -140,24 +161,24 @@ void Tree::build(const Vector3D& pos, const Vector3D& dir, double len, double ra
     // 🌿 Seitenäste
     // =====================================================
 
-    int branches = 2 + rand() % 3;
+    int branches = param.seitenMin + rand() % (param.seitenMax - param.seitenMin + 1);
 
     for (int i = 0; i < branches; i++)
     {
-        double t = randRange(0.2, 1.0);
+        double t = randRange(std::clamp(param.ansatzMin, 0.0, 1.0), 1.0);
         Vector3D base = pos + (end - pos) * t;
 
         Vector3D branchDir = dir;
-        branchDir.x += randRange(-0.6, 0.6);
+        branchDir.x += randRange(-param.streuungSeiten, param.streuungSeiten);
         branchDir.y += randRange(0.1, 0.8);
-        branchDir.z += randRange(-0.6, 0.6);
-        branchDir.y *= 0.6; // WACHSTUMS- “Gravity”
+        branchDir.z += randRange(-param.streuungSeiten, param.streuungSeiten);
+        branchDir.y *= param.schwereSeiten; // WACHSTUMS- “Gravity”
         branchDir.normalize();
 
         build(base,
               branchDir,
-              len * randRange(0.75, 0.9),
-              radiusHolz * 0.65,
+              len * randRange(param.laengeMin, param.laengeMax) * param.seitenLaenge,
+              radiusHolz * param.dickenFaktor,
               depth - 1,
               wkeitWeiteresGlied);
     }
@@ -340,7 +361,7 @@ void Tree::updateBounds()
     maxBound = maxB;
 }
 
-void Tree::addBranchMesh(const Vector3D& start, const Vector3D& end, double radius, int segments, const Material& mat)
+void Tree::addBranchMesh(const Vector3D& start, const Vector3D& end, double r1, double r2, int segments, const Material& mat)
     {
         Vector3D axis = (end - start).normalized();
 
@@ -357,8 +378,6 @@ void Tree::addBranchMesh(const Vector3D& start, const Vector3D& end, double radi
         std::vector<Vector3D> normalsStart;
         std::vector<Vector3D> normalsEnd;
 
-        double r1 = radius;
-        double r2 = radius * randRange(0.6, 0.9);
 
         for (int i = 0; i < segments; i++)
         {
@@ -421,23 +440,10 @@ void Tree::addBranchMesh(const Vector3D& start, const Vector3D& end, double radi
 
 void Tree::addLeaf(const Vector3D& pos, const Vector3D& dir)
 {
-    Material leaf = Material(
-        Farbe(0.0, 0.0, 0.0),      // ambient (Ka)
-        Farbe(0.20, 0.55, 0.20),   // diffuse (Kd)
-        Farbe(0.0, 0.0, 0.0),      // specular (Ks)
-        Farbe(0.0, 0.0, 0.0),      // emission (Ke)
-
-        0.0,   // kA
-        1.0,   // kD
-        0.0,  // shininess (Ns)
-        0.0,   // specularStrength (optional aus Ks ableitbar)
-
-        0.01,   // reflection
-        0.0,   // roughness (nicht aus MTL ableitbar)
-        0.0,   // IOR (Ni)
-        0.0,   // transparency (d = 1 → opaque)
-        Farbe(0,0,0) // absorption
-    );
+    // Schnee: waagrechte Blaetter (Normale = Astrichtung) tragen eher Schnee
+    const Material &leaf =
+        (param.schnee > 0.0 && randRange(0.0, 1.0) < param.schnee * std::abs(dir.normalized().y)) ? schneeMaterial
+                                                                                              : blattMaterial;
 
     Vector3D up = std::abs(dir.y) > 0.9 ? Vector3D(1,0,0) : Vector3D(0,1,0);
 
@@ -453,7 +459,7 @@ void Tree::addLeaf(const Vector3D& pos, const Vector3D& dir)
     Vector3D r = right * c + realUp * s;
     Vector3D u = right * (-s) + realUp * c;
 
-    double size = randRange(0.1, 0.2);
+    double size = randRange(param.blattMin, param.blattMax);
 
     Vector3D p1 = pos + r * size + u * size;
     Vector3D p2 = pos - r * size + u * size;
@@ -553,11 +559,7 @@ double Tree::randRange(double a, double b)
 }*/
 void Tree::buildBVH()
 {
-    if (bvhRoot)
-    {
-        //delete bvhRoot;
-        bvhRoot = nullptr;
-    }
+    bvhFreigeben(bvhRoot); // alten Baum freigeben (vorher blieb er bei jedem translate/rotate/scale liegen)
 
     bvhObjects.clear();
     bvhObjects.reserve(woodTriangles.size() + leaves.size());
@@ -566,4 +568,33 @@ void Tree::buildBVH()
     for (auto& l : leaves)        bvhObjects.push_back(&l);
 
     bvhRoot = ::buildBVH(bvhObjects);
+}
+
+// Schnee auf einem Ast: Schale ueber der Oberseite, etwas dicker als der Ast.
+// Bedeckt werden die Seiten, deren Normale nach oben zeigt; mehr Schnee = weiter um den Ast herum.
+void Tree::addSchnee(const Vector3D& start, const Vector3D& end, double r1, double r2)
+{
+    const int segments = param.segmente;
+    Vector3D axis = (end - start).normalized();
+    Vector3D up = std::abs(axis.y) > 0.9 ? Vector3D(1, 0, 0) : Vector3D(0, 1, 0);
+    Vector3D right = axis.cross(up).normalized();
+    Vector3D forward = right.cross(axis).normalized();
+
+    const double schwelle = 1.0 - 1.5 * std::clamp(param.schnee, 0.0, 1.0); // Normale.y darueber: Schnee
+    const double dicke = 1.0 + std::max(0.0, param.schneeDicke);
+
+    for (int i = 0; i < segments; i++)
+    {
+        int next = (i + 1) % segments;
+        double a0 = 2.0 * M_PI * i / segments, a1 = 2.0 * M_PI * next / segments;
+        Vector3D n0 = right * cos(a0) + forward * sin(a0);
+        Vector3D n1 = right * cos(a1) + forward * sin(a1);
+        if ((n0.y + n1.y) * 0.5 <= schwelle) // dieser Streifen schaut nicht genug nach oben
+            continue;
+
+        Vector3D p1 = start + n0 * (r1 * dicke), p2 = start + n1 * (r1 * dicke);
+        Vector3D p3 = end + n0 * (r2 * dicke), p4 = end + n1 * (r2 * dicke);
+        woodTriangles.emplace_back(p1, p2, p3, n0, n1, n0, schneeMaterial);
+        woodTriangles.emplace_back(p2, p4, p3, n1, n1, n0, schneeMaterial);
+    }
 }

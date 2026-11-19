@@ -11,6 +11,7 @@ class Kugel : public object
 {
 public:
     double radius;
+    const wchar_t* getTypeName() const override{return L"Kugel";}
 
     // Konstruktoren
     Kugel(); // Standard: Mitte 0,0,0, Radius 1
@@ -18,7 +19,11 @@ public:
 
     // Schnitt mit Ray
     void intersect(const Ray& ray, Hit& hit) const override;
-    void translate(const Vector3D &delta) override {};
+    void translate(const Vector3D &delta) override
+    {
+        position += delta;
+        updateBounds();
+    }
     void drawFlat(Wireframe &wf, DrawMode mode) const override;
     void drawWireframePixels(Wireframe& wf, DrawMode mode = DrawMode::NORMAL) const override;
     void updateBounds();

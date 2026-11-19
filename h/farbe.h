@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <ostream>
 
@@ -26,6 +27,22 @@ public:
     unsigned int toCOLORREF() const;
     friend std::ostream &operator<<(std::ostream &os, const Farbe &vec);
 };
+
+inline Farbe invertColor(const Farbe &c)
+{
+    return Farbe(
+        1.0 - std::clamp(c.r, 0.0, 1.0),
+        1.0 - std::clamp(c.g, 0.0, 1.0),
+        1.0 - std::clamp(c.b, 0.0, 1.0));
+}
+
+inline Farbe invertColorHighlight(const Farbe &c)
+{
+    return Farbe(
+        1.0 - std::clamp(c.r, 0.0, 1.0),
+        1.0 - std::clamp(c.g, 0.0, 1.0),
+        1.0 - std::clamp(c.b, 0.0, 1.0));
+}
 
 Farbe sRGBtoLinear(const Farbe &sRGBColor);
 
