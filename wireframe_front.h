@@ -1,12 +1,11 @@
 #pragma once
-#include "wireframe.h"   
+#include "wireframe.h"
 #include "vector3d.h"
 
-class WireframeFront : public Wireframe {
+class WireframeFront : public Wireframe
+{
 public:
     using Wireframe::Wireframe;
-    void project(const Vector3D& p, int& x, int& y, double& z) override;
-    Ray createRay(int x, int y);
+    AnsichtParameter ansicht() const override;
     Vector3D getDragPlaneNormal() const;
-
 };

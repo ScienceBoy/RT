@@ -9,6 +9,7 @@ class Wand : public object
 {
 public:
     Dreieck t1, t2;
+    const wchar_t* getTypeName() const override{return L"Wand";}
 
     Wand();
     Wand(const Vector3D& a, const Vector3D& b, const Vector3D& c, const Vector3D& d, const Material& mat);

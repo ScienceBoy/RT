@@ -6,10 +6,11 @@
 #include "drawmode.h"
 #include <iostream>
 #include "texture.h"
-#include <numbers>
 #include "TextureManager.h"
 #include <iostream>
 #include "TextureMode.h"
+#include "textur_param.h"
+#include <atomic>
 
 class Wireframe;   // Forward declaration
 class BVHNode;  // forward declaration
@@ -24,6 +25,30 @@ public:
     std::shared_ptr<Texture> texture = nullptr;
     std::string materialName = "";
     std::string textureName= "";
+
+    // Bezugsbox fuer die Textur: bei Dreiecken eines Mesh die Box des ganzen Mesh (sonst legte jedes
+    // Dreieck die Textur ueber seine eigene winzige Box, und Kugel-Mapping lief um den Ursprung)
+    bool texturBox = false;
+    Vector3D texturMin, texturMax;
+    // Ausrichtung der Textur (Material-Reiter): spiegeln links/rechts bzw. oben/unten, Drehung in 90-Grad-Schritten
+    bool texturSpiegelU = false, texturSpiegelV = false;
+    int texturDrehung = 0; // 0..3
+    // weitere Textur-Einstellungen (Kachelgroesse, Versatz, Winkel, objektfest, Relief/Alpha/Glanz/Leuchten);
+    // nullptr = Vorgaben. Dreiecke eines Netzes teilen sich die Einstellungen ihres Netzes.
+    std::shared_ptr<const TexturParameter> texPar;
+    const TexturParameter &texturPar() const { return texPar ? *texPar : TexturParameter::vorgabe(); }
+    std::string name = ""; // Anzeigename (UTF-8), z.B. aus der OBJ-Datei oder der Szenen-XML
+
+    // zaehlt Aenderungen, die nur einzelne Ecken verschieben (Terrain-Pinsel, Terrain absenken): die Ansichten
+    // pruefen grosse Netze nur stichprobenweise und laden das Netz bei einem neuen Wert neu hoch
+    unsigned geometrieZaehler = 0;
+
+    // In den Ansichten ausgeblendet (Haken in der Objektliste); der Raytracer rendert es trotzdem
+    bool versteckt = false;
+
+    // Drehung seit Erstellen/Laden als 3x3-Matrix (zeilenweise), nur fuer die Anzeige der
+    // Drehwinkel; wird von den Funktionen in drehung.h mitgefuehrt
+    double ausrichtung[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 
     Vector3D minBound;
     Vector3D maxBound;
@@ -41,8 +66,11 @@ public:
       position(0,0,0)
     {}
     virtual ~object() {};
-
+    virtual const wchar_t* getTypeName() const {return L"Object";}
     virtual void intersect(const Ray& ray, Hit& hit) const = 0;
+    virtual void translate(const Vector3D& delta) = 0;
+    virtual void rotate(const Vector3D& rotation) = 0;
+    virtual void scale(const Vector3D& rotation) = 0;
     void setPosition(const Vector3D& pos) { position = pos; }
     virtual void drawWireframePixels(Wireframe& wf, DrawMode mode) const = 0;
     virtual void drawFlat(Wireframe& wf, DrawMode mode) const = 0;
@@ -115,10 +143,19 @@ public:
     {
         texture = tex;
     }
-
     virtual void setTextureMode(TextureMode mode)
     {
         textureMode = mode;
     }
+    virtual void collectPrimitives(std::vector<object*>& out)
+    {
+        out.push_back(this);
+    }
 };
 
+// zaehlt jedes Ein-/Ausblenden (die Ansichten zeichnen dann neu)
+inline std::atomic<unsigned> gVersteckAenderungen{0};
+
+// zaehlt jede Bearbeitung der Szene (gSzeneAendern, Rueckgaengig, Animation, Terrain-Pinsel ...); die Ansichten
+// pruefen grosse Netze nur dann vollstaendig auf Aenderungen
+inline std::atomic<unsigned> gGeometrieStand{0};

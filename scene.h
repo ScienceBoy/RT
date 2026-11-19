@@ -14,7 +14,8 @@ class light;  // Forward Declaration
 
 // Globale Szenenobjekte
 extern std::vector<std::unique_ptr<object>> scene;
-extern std::vector<light> lights;
+//extern std::vector<light> lights;
+extern std::vector<std::unique_ptr<light>> lights;
 extern std::vector<Camera> cam;
 
 extern double exposure;
@@ -51,6 +52,9 @@ extern bool wasserVorhanden;
 extern bool antialiasing;
 extern int antialiasingSamples;
 
+extern int pathSamples;
+extern int renderingDepth;
+
 extern Vector3D sceneMin;
 extern Vector3D sceneMax;
 
@@ -83,3 +87,5 @@ void addWolkenAusKugeln(int Anzahl, int Tiefe, int Groesse);
 void addTerrain(int gridResolution, int sizeXZ, int heightScale, int octaves);
 
 void addWasser(int gridResolution, int sizeXZ, int heightScale, int octaves);
+
+void addBaum(Vector3D pos, Vector3D richtung, double laenge, double radius, int tiefe, double wkeitWeiteresGlied);

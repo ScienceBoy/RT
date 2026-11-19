@@ -1,5 +1,8 @@
 #pragma once
 #include <cmath>
+#include <iostream>
+#include <ostream>
+
 
 class Vector3D {
 public:
@@ -8,10 +11,12 @@ public:
     // Konstruktoren
     Vector3D();
     Vector3D(double x_, double y_, double z_);
+    Vector3D(const Vector3D& other);
 
     // Operatoren
     Vector3D operator+(const Vector3D& v) const;
     Vector3D operator-(const Vector3D& v) const;
+    Vector3D& operator=(const Vector3D& other);
     Vector3D operator*(double scalar) const;
 
     Vector3D& operator+=(const Vector3D& v);
@@ -45,5 +50,6 @@ public:
     Vector3D minVec(const Vector3D & a, const Vector3D & b);
     Vector3D maxVec(const Vector3D & a, const Vector3D & b);
 
+    friend std::ostream &operator<<(std::ostream &os, const Vector3D &vec);
+    Vector3D operator/(double s) const;
 };
-

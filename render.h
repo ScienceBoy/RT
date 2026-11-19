@@ -17,11 +17,11 @@ Vector3D refract(const Vector3D & I, const Vector3D & N, double n1, double n2);
 
 double fresnel(const Vector3D &I, const Vector3D &N, double n1, double n2);
 
-Farbe flatShading(const Farbe& objectFarbe, const Vector3D& normale,  const Vector3D& punkt);
+//Farbe flatShading(const Farbe& objectFarbe, const Vector3D& normale,  const Vector3D& punkt);
 
 void render(Fenster &f, int xStart, int xEnd, int yStart, int yEnd, std::atomic<int> &linesDone, std::atomic<bool> &stopRendering);
 
-Farbe flatShadingAndshadow(const Farbe &objectFarbe, const Vector3D &normale, const Vector3D &punkt);
+//Farbe flatShadingAndshadow(const Farbe &objectFarbe, const Vector3D &normale, const Vector3D &punkt);
 
 Farbe blinnPhong(const Material & mat, const Vector3D & normale, const Vector3D & punkt, const Hit h, const Vector3D & viewPos);
 
@@ -102,3 +102,6 @@ void generateTerrain(int gridResolution, double sizeXZ, double heightScale, int 
 
 double Halton(int index, int base);
 
+Vector3D randomHemisphereDirection(const Vector3D &N);
+
+Vector3D cosineSampleHemisphere(const Vector3D &N);
